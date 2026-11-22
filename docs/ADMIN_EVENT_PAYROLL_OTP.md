@@ -39,7 +39,7 @@ npm run check-email
 
 Perintah ini memeriksa format konfigurasi dan menjelaskan apakah pengirim masih memakai `resend.dev`. Tidak mencetak API key, tidak mengirim email, dan tidak membuktikan domain/key sudah disetujui provider.
 
-`OTP_EMAIL_FROM=FotoSnaps <onboarding@resend.dev>` adalah pengirim percobaan Resend. Pengiriman percobaan dibatasi ke alamat pemilik akun Resend. Untuk dua email crew lain, tambahkan/verifikasi domain milik Anda pada Resend, lalu gunakan alamat dari domain tersebut sebagai `OTP_EMAIL_FROM`. Contoh format saja: `FotoSnaps <otp@domain-anda.com>`. Jangan gunakan `noreply@gmail.com` atau domain orang lain. Pastikan API key mempunyai izin mengirim pada domain tersebut.
+`OTP_EMAIL_FROM=Pictomatic <onboarding@resend.dev>` adalah pengirim percobaan Resend. Pengiriman percobaan dibatasi ke alamat pemilik akun Resend. Untuk dua email crew lain, tambahkan/verifikasi domain milik Anda pada Resend, lalu gunakan alamat dari domain tersebut sebagai `OTP_EMAIL_FROM`. Contoh format saja: `Pictomatic <otp@domain-anda.com>`. Jangan gunakan `noreply@gmail.com` atau domain orang lain. Pastikan API key mempunyai izin mengirim pada domain tersebut.
 
 Rujukan: https://resend.com/docs/knowledge-base/403-error-resend-dev-domain
 

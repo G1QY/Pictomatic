@@ -41,7 +41,7 @@ test('encrypted password vault permissions, invalidation and promoted profile ed
   for(const file of ['20260918102008_head_store_accounts_attendance.sql','20260924073548_crew_password_vault_profile_roles.sql']) await db.exec(fs.readFileSync(path.join(dir,file),'utf8'));
   await db.exec(fs.readFileSync(path.join(dir,'20260924073548_crew_password_vault_profile_roles.sql'),'utf8'));
   const roleOf=async user=>(await one('select r.code from user_roles ur join roles r on r.id=ur.role_id where user_id=$1',[user])).code;
-  await db.query('select manage_crew($1,$2,$3,null,$4)',[id(1),'update',id(20),JSON.stringify({fullName:'Head edited',crewType:'CREW_STORE',companyName:'JAWARA'})]);
+  await db.query('select manage_crew($1,$2,$3,null,$4)',[id(1),'update',id(20),JSON.stringify({fullName:'Head edited',crewType:'CREW_STORE',companyName:'Pictomatic'})]);
   assert.equal(await roleOf(id(2)),'HEAD_STORE');
   assert.equal((await one('select city_name from head_store_scopes where user_id=$1',[id(2)])).city_name.trim(),'Bandung');
   await db.query('select set_account_role($1,$2,$3,null)',[id(1),id(2),'EVENT_MANAGER']);

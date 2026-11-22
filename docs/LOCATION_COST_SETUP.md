@@ -4,7 +4,7 @@
 
 ## Pasang
 
-Paket kumulatif ini dipasang di atas proyek AbsensiJawara, bukan proyek lengkap.
+Paket kumulatif ini dipasang di atas proyek Pictomatic, bukan proyek lengkap.
 Salin folder/file paket ke root proyek, tinjau diff, commit, lalu deploy frontend dan backend.
 Tidak ada migrasi SQL baru untuk v6. Jika belum memasang v4, jalankan SQL yang dijelaskan dalam CARA_PASANG.txt terlebih dahulu.
 Jangan timpa .env aktif dengan contoh; tambahkan hanya variabel yang dibutuhkan.

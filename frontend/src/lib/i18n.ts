@@ -1,7 +1,7 @@
 import {useSyncExternalStore} from 'react';
 import english from './locales/en.json';
 export type Language='id'|'en';
-const key='jawara_language';
+const key='pictomatic_language';
 let language:Language='id';
 try { language=localStorage.getItem(key)==='en'?'en':'id'; } catch {}
 const listeners=new Set<()=>void>();

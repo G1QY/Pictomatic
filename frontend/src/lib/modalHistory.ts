@@ -1,4 +1,4 @@
-const KEY = '__fotosnapsModal';
+const KEY = '__pictomaticModal';
 type Entry = { id: string; close: () => void };
 const entries: Entry[] = [];
 const waiting: Entry[] = [];

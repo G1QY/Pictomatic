@@ -1,6 +1,6 @@
 // Lapisan komunikasi ke backend Express (lihat ../../../backend).
 // Semua request otomatis menyertakan JWT (Authorization) dari Supabase Auth.
-// TIDAK ADA lagi X-Tenant-Id — database FotoSnaps sudah berdiri sendiri.
+// TIDAK ADA lagi X-Tenant-Id — database Pictomatic sudah berdiri sendiri.
 import { clearAuthSession, getAccessToken } from './authSession';
 
 // Prefix /api ditambahkan sekali di sini — semua endpoint backend sekarang
@@ -22,7 +22,7 @@ interface RequestOptions extends RequestInit {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { auth = true, headers, ...rest } = options;
-  const finalHeaders: Record<string, string> = { 'X-FotoSnaps-Request': '1', 'Content-Type': 'application/json', ...(headers as Record<string, string>) };
+  const finalHeaders: Record<string, string> = { 'X-Pictomatic-Request': '1', 'Content-Type': 'application/json', ...(headers as Record<string, string>) };
 
   if (auth) {
     const token = getAccessToken();
@@ -65,7 +65,7 @@ export const api = {
 
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
-      headers: { 'X-FotoSnaps-Request': '1', Authorization: `Bearer ${token}` },
+      headers: { 'X-Pictomatic-Request': '1', Authorization: `Bearer ${token}` },
       body: formData,
     });
 

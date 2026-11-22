@@ -2,14 +2,14 @@
 # All paid-capable services explicitly use free plans.
 services:
   - type: keyvalue
-    name: fotosnaps-demo-security
+    name: pictomatic-demo-security
     region: singapore
     plan: free
     maxmemoryPolicy: noeviction
     ipAllowList: []
 
   - type: web
-    name: fotosnaps-demo-api
+    name: pictomatic-demo-api
     runtime: node
     region: singapore
     plan: free
@@ -32,7 +32,7 @@ services:
       - key: REDIS_URL
         fromService:
           type: keyvalue
-          name: fotosnaps-demo-security
+          name: pictomatic-demo-security
           property: connectionString
       # Exact frontend HTTPS origin, without trailing slash.
       - key: CORS_ORIGIN
@@ -61,7 +61,7 @@ services:
         sync: false
 
   - type: web
-    name: fotosnaps-demo-ui
+    name: pictomatic-demo-ui
     runtime: static
     rootDir: frontend
     buildCommand: npm ci --include=dev && npm run build

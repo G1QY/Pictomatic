@@ -1,4 +1,4 @@
-# Backend JAWARA
+# Backend Pictomatic
 
 Express API untuk absensi dan operasional. Panduan aktif, 5 Oktober 2026, berdasarkan baseline `805c40b`.
 

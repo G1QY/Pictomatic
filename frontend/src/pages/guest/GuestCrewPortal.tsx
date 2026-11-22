@@ -32,7 +32,7 @@ export interface GuestAttendanceRecord {
   status: 'Menunggu Verifikasi Admin' | 'Disetujui' | 'Ditolak';
 }
 
-const GUEST_STORAGE_KEY = 'Jawara_guest_attendances';
+const GUEST_STORAGE_KEY = 'Pictomatic_guest_attendances';
 
 export function getGuestAttendances(): GuestAttendanceRecord[] {
   try {
@@ -151,7 +151,7 @@ export default function GuestCrewPortal({ page, onNavigate }: { page: string; on
   const [submittedRecord, setSubmittedRecord] = useState<GuestAttendanceRecord | null>(null);
   const [formError, setFormError] = useState('');
 
-  const adminPhone = (import.meta.env.VITE_ADMIN_WHATSAPP || '6281214989974').toString().replace(/\D/g, '');
+  const adminPhone = (import.meta.env.VITE_ADMIN_WHATSAPP || '').toString().replace(/\D/g, '');
 
   const getLocationText = useCallback(() => {
     if (jenis === 'Kantor') {
@@ -363,7 +363,7 @@ export default function GuestCrewPortal({ page, onNavigate }: { page: string; on
     ctx.textAlign = 'right';
     ctx.font = `bold ${Math.round(width * 0.038)}px system-ui, -apple-system, sans-serif`;
     ctx.fillStyle = '#F59E0B'; // Amber / Gold accent
-    ctx.fillText('JAWARA', width - rightPadding, topPadding);
+    ctx.fillText('Pictomatic', width - rightPadding, topPadding);
 
     ctx.font = `500 ${Math.round(width * 0.022)}px system-ui, -apple-system, sans-serif`;
     ctx.fillStyle = '#FFFFFF';
@@ -503,7 +503,7 @@ export default function GuestCrewPortal({ page, onNavigate }: { page: string; on
       const form = new FormData();
       for (const [key, value] of Object.entries({ companyName: newRecord.companyName || '', jobTitle: newRecord.jobTitle || '', fullName: newRecord.nama, phone: newRecord.hp, crewType: jenis === 'Crew Event' ? 'CREW_EVENT' : 'CREW_STORE', assignmentKind: jenis === 'Kantor' ? 'OFFICE' : jenis === 'Crew Store' ? 'STORE' : 'EVENT', locationId: selectedLocation, locationName: newRecord.lokasi, position: posisi, clockType: tipeAbsen === 'Clock In' ? 'IN' : 'OUT', latitude: newRecord.latitude, longitude: newRecord.longitude, accuracy: newRecord.accuracy ?? '', address: newRecord.address, note: newRecord.catatan, locationSource: locSource, submissionKey: submissionKey.current })) form.append(key, String(value));
       form.append('photo', await (await fetch(foto)).blob(), 'guest-selfie.jpg');
-      const res = await fetch(GUEST_API, { method: 'POST', headers: { 'X-FotoSnaps-Request': '1' }, body: form });
+      const res = await fetch(GUEST_API, { method: 'POST', headers: { 'X-Pictomatic-Request': '1' }, body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.id) throw new Error(data?.message || 'Absensi belum tersimpan di server. Coba lagi.');
       setSubmittedRecord({ ...newRecord, id: data.id, occurredAt: data.occurred_at, timestamp: new Date(data.occurred_at).toLocaleString(getLocale(), { timeZone: 'Asia/Jakarta' }) });
@@ -540,7 +540,7 @@ export default function GuestCrewPortal({ page, onNavigate }: { page: string; on
 
 _Foto selfie telah tersimpan di sistem._`;
 
-    return `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}`;
+    return adminPhone ? `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}` : '';
   };
 
   return (
@@ -677,7 +677,7 @@ _Foto selfie telah tersimpan di sistem._`;
                       className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
                     >
                       <option value={"Tenda"}>{translateUI("Tenda")}</option>
-                      <option value={"FotoSnaps"}>FotoSnaps</option>
+                      <option value={"Pictomatic"}>Pictomatic</option>
                       <option value={"Bujangan"}>Bujangan</option>
                       <option value={"Fotobox"}>Fotobox</option>
                       <option value={"Staff Kantor"}>{translateUI("Staff Kantor")}</option>
@@ -806,7 +806,7 @@ _Foto selfie telah tersimpan di sistem._`;
 
                           {/* Top Right Mini Brand */}
                           <div className="absolute top-3 right-3 text-right">
-                            <p className="text-xs font-bold text-amber-400 leading-none">JAWARA</p>
+                            <p className="text-xs font-bold text-amber-400 leading-none">Pictomatic</p>
                             <p className="text-[10px] text-white/80 mt-0.5">{translateUI("Bukti pengajuan absensi")}</p>
                           </div>
 
@@ -938,17 +938,17 @@ _Foto selfie telah tersimpan di sistem._`;
           <div className="space-y-4">
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-4">
               <h3 className="text-base font-bold text-slate-900">{" " + translateUI("Pusat Bantuan & Layanan Kendala Akun") + " "}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">{" " + translateUI("Jika mengalami kendala kata sandi atau akun terkunci, hubungi Admin JAWARA melalui kontak di bawah ini.") + " "}</p>
+              <p className="text-xs text-slate-600 leading-relaxed">{" " + translateUI("Jika mengalami kendala kata sandi atau akun terkunci, hubungi Admin Pictomatic melalui kontak di bawah ini.") + " "}</p>
 
               <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold text-blue-900">{translateUI("Helpdesk Admin JAWARA")}</p>
-                  <p className="text-xs text-blue-700">WhatsApp: 081214989974</p>
+                  <p className="text-xs font-bold text-blue-900">{translateUI("Helpdesk Admin Pictomatic")}</p>
+                  <p className="text-xs text-blue-700">{adminPhone ? `WhatsApp: ${adminPhone}` : "Kontak admin belum dikonfigurasi"}</p>
                 </div>
                 <a
-                  href={`https://wa.me/${adminPhone}?text=${encodeURIComponent(
-                    'Halo Admin JAWARA, saya memerlukan bantuan reset password akun crew.'
-                  )}`}
+                  href={adminPhone ? `https://wa.me/${adminPhone}?text=${encodeURIComponent('Halo Admin Pictomatic, saya memerlukan bantuan reset password akun crew.')}` : undefined}
+                  aria-disabled={!adminPhone}
+                  onClick={(event) => { if (!adminPhone) event.preventDefault(); }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors"

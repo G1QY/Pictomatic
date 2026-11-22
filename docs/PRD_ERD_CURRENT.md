@@ -1,10 +1,10 @@
-# JAWARA — spesifikasi dan relasi data saat ini
+# Pictomatic — spesifikasi dan relasi data saat ini
 
 Panduan aktif, 5 Oktober 2026. Baseline implementasi `805c40b`. Menggantikan PRD/ERD v2.0 sebagai ringkasan aplikasi sekarang; bukan usulan membangun ulang.
 
 ## Tujuan dan cakupan
 
-JAWARA mengelola personel, penempatan, jadwal, absensi, event dan payroll. Workspace mengikuti role, dengan administrasi global, monitoring kota, operasi event dan pekerjaan pribadi yang berbeda.
+Pictomatic mengelola personel, penempatan, jadwal, absensi, event dan payroll. Workspace mengikuti role, dengan administrasi global, monitoring kota, operasi event dan pekerjaan pribadi yang berbeda.
 
 Database dipisah per perusahaan. Nama perusahaan/jabatan pada profil adalah informasi bisnis, bukan pemisah tenant. Inventory Bujangan Food tidak aktif pada backend ini; absensi Store tidak berarti seluruh operasional restoran telah diimplementasikan.
 

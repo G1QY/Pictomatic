@@ -15,10 +15,10 @@ await db.exec(`insert into roles(code,name) values('SUPER_ADMIN','Admin'),('CREW
 insert into auth.users(id,email) values('${admin}','admin@example.test'),('${user}','crew@example.test');
 insert into user_roles(user_id,role_id) select '${admin}',id from roles where code='SUPER_ADMIN';`);
 const rpc=(actor,op,id,uid,data)=>db.query('select manage_crew($1,$2,$3,$4,$5) as id',[actor,op,id,uid,JSON.stringify(data)]);
-let result=await rpc(admin,'create',null,user,{employeeCode:'EMP-123456',fullName:'Test Crew',crewType:'CREW_STORE',companyName:'Fotosnaps',jobTitle:'Kasir',baseSalary:0});
+let result=await rpc(admin,'create',null,user,{employeeCode:'EMP-123456',fullName:'Test Crew',crewType:'CREW_STORE',companyName:'Pictomatic',jobTitle:'Kasir',baseSalary:0});
 const id=result.rows[0].id;
-let row=(await db.query('select * from crew where id=$1',[id])).rows[0];assert.equal(row.company_name,'Fotosnaps');assert.equal(row.job_title,'Kasir');assert.equal(row.branch_id,null);
-await rpc(admin,'update',id,null,{jobTitle:'Supervisor'});row=(await db.query('select * from crew where id=$1',[id])).rows[0];assert.equal(row.company_name,'Fotosnaps');assert.equal(row.job_title,'Supervisor');assert.equal(row.employee_code,'EMP-123456');
+let row=(await db.query('select * from crew where id=$1',[id])).rows[0];assert.equal(row.company_name,'Pictomatic');assert.equal(row.job_title,'Kasir');assert.equal(row.branch_id,null);
+await rpc(admin,'update',id,null,{jobTitle:'Supervisor'});row=(await db.query('select * from crew where id=$1',[id])).rows[0];assert.equal(row.company_name,'Pictomatic');assert.equal(row.job_title,'Supervisor');assert.equal(row.employee_code,'EMP-123456');
 await assert.rejects(()=>rpc(user,'update',id,null,{companyName:'Bad'}));
 const role=(await db.query('select r.code from user_roles ur join roles r on ur.role_id=r.id where ur.user_id=$1',[user])).rows[0];assert.equal(role.code,'CREW_STORE');
 await assert.rejects(()=>rpc(admin,'update',id,null,{companyName:'x'.repeat(151)}));

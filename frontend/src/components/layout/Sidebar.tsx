@@ -1,7 +1,6 @@
 import {t as translateUI} from '../../lib/i18n';
 import { useAuth } from '../../lib/AuthContext';
 import { useState } from 'react';
-import fotoSnapsLogo from '../../assets/landscape.jpg';
 
 import type { FrontendRole as Role } from '../../lib/AuthContext';
 import {accountRoles} from '../../lib/accountRoles';
@@ -220,12 +219,12 @@ export default function Sidebar({ role, currentPage, onNavigate, collapsed, onTo
           <button
             onClick={forceExpanded ? onCloseMobile : onToggle}
             className="w-16 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-10/80 dark:border-white/15 ring-1 ring-black/5 hover:border-slate-400 dark:hover:border-white/30 transition-all"
-            title="JAWARA"
+            title="Pictomatic"
           >
-            <img src={fotoSnapsLogo} alt="JAWARA" className="w-full h-full object-cover" />
+            <img src="/pictomatic-logo.svg" alt="Pictomatic" className="w-full h-full object-contain" />
           </button>
           {!isCollapsed && (
-            <span className={`sidebar-brand font-bold tracking-tight whitespace-nowrap overflow-hidden ${role === 'guest_crew' ? 'ml-3 text-sm' : 'ml-3 text-lg'}`}>JAWARA</span>
+            <span className={`sidebar-brand font-bold tracking-tight whitespace-nowrap overflow-hidden ${role === 'guest_crew' ? 'ml-3 text-sm' : 'ml-3 text-lg'}`}>Pictomatic</span>
           )}
           {forceExpanded && (
             <button onClick={onCloseMobile} className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 md:hidden">

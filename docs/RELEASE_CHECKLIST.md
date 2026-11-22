@@ -1,4 +1,4 @@
-# Checklist rilis JAWARA
+# Checklist rilis Pictomatic
 
 Panduan aktif, 5 Oktober 2026. Ini kriteria pemeriksaan, bukan klaim seluruh item sudah lulus pada setiap environment.
 

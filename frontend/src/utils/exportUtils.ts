@@ -27,7 +27,7 @@ export async function makeReportPDF(title:string,subtitle:string,headers:string[
   margin:{top:14,right:14,bottom:16,left:14},showHead:'everyPage',horizontalPageBreak:true,horizontalPageBreakRepeat:Math.max(0,headers.findIndex(header=>/^Nama(?: Crew)?$/i.test(header))),
  });
  const total=doc.getNumberOfPages();
- for(let page=1;page<=total;page++){doc.setPage(page);doc.setFontSize(8);doc.text(`JAWARA | ${page} / ${total}`,14,doc.internal.pageSize.getHeight()-8);}
+ for(let page=1;page<=total;page++){doc.setPage(page);doc.setFontSize(8);doc.text(`Pictomatic | ${page} / ${total}`,14,doc.internal.pageSize.getHeight()-8);}
  return doc;
 }
 export async function exportToPDF(title:string,subtitle:string,headers:string[],rows:ExportRow[]){

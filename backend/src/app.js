@@ -12,7 +12,7 @@ installSecurity(app);
 app.use(morgan(':method :url :status :response-time ms', {stream:{write:line=>console.log(line.replace(/\?.*?(?= \d{3} )/g,'').trim())}}));
 
 // /health SENGAJA di luar prefix /api (dipakai load balancer/uptime check)
-app.get('/health', (req, res) => res.json({ status: 'ok', service: 'fotosnaps-backend' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', service: 'pictomatic-backend' }));
 
 // ---------------------------------------------------------------------
 // Semua endpoint bisnis dipasang di bawah prefix /api, sesuai daftar
@@ -30,7 +30,7 @@ api.use('/guest-attendance', require('./modules/attendance/guestAttendance.route
 // (menempelkan req.role dari user_roles, dipakai requireRole per-route).
 //
 // TIDAK ADA lagi tenantContext / X-Tenant-Id — database ini sudah
-// khusus FotoSnaps, isolasi data cukup lewat RLS (auth.uid()) di
+// khusus Pictomatic, isolasi data cukup lewat RLS (auth.uid()) di
 // database, bukan filter tenant_id manual di backend.
 api.use(authenticate, attachRole, userLimits, uploadLimits);
 api.use((req,res,next)=>{res.on('finish',()=>{if(!['GET','HEAD','OPTIONS'].includes(req.method))console.log(JSON.stringify({event:'authenticated_mutation',requestId:req.requestId,userId:req.user.id,role:req.role,method:req.method,route:req.route?.path,status:res.statusCode}));});next();});

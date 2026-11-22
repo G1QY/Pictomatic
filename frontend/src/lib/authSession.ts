@@ -4,7 +4,7 @@ let accessToken: string | null = null;
 
 export function clearLegacyAuth() {
   try {
-    globalThis.localStorage?.removeItem('fotosnaps_auth');
+    globalThis.localStorage?.removeItem('pictomatic_auth');
   } catch {
     // Login must still work when browser storage is disabled.
   }

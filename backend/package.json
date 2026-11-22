@@ -1,7 +1,7 @@
 {
-  "name": "fotosnaps-backend",
+  "name": "pictomatic-backend",
   "version": "1.0.0",
-  "description": "Backend API — FotoSnaps & Bujangan Food Sistem Informasi Operasional Terpadu",
+  "description": "Backend API — Pictomatic Sistem Informasi Operasional Terpadu",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",

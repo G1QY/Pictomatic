@@ -34,7 +34,7 @@ Dasar perubahan: `main` d340a298839903b7fb89baa14c2a27e1ae19ccb7.
 
 File: `supabase/migrations/20260918102008_head_store_accounts_attendance.sql`.
 
-Status saat penyerahan: migrasi telah lulus pengujian PostgreSQL lokal, tetapi BELUM diterapkan pada Supabase JAWARA. Pemeriksaan persetujuan otomatis menolak penerapan langsung karena mengubah RLS, hak eksekusi fungsi, role lama dan relasi penghapusan pada database produksi. Perlu persetujuan khusus pengguna sebelum penerapan produksi. Tidak ada akun produksi dihapus atau role pengguna produksi diubah selama pengujian.
+Status saat penyerahan: migrasi telah lulus pengujian PostgreSQL lokal, tetapi BELUM diterapkan pada Supabase database sumber. Pemeriksaan persetujuan otomatis menolak penerapan langsung karena mengubah RLS, hak eksekusi fungsi, role lama dan relasi penghapusan pada database produksi. Perlu persetujuan khusus pengguna sebelum penerapan produksi. Tidak ada akun produksi dihapus atau role pengguna produksi diubah selama pengujian.
 
 Publikasi GitHub juga belum berhasil: git push tidak memiliki kredensial tulis dan koneksi GitHub mengembalikan HTTP 403 `Resource not accessible by integration`. Branch hanya tersedia lokal; belum ada PR. Paket penyerahan berisi source lengkap dan patch Git agar perubahan dapat ditinjau dan dilanjutkan setelah akses tulis tersedia.
 

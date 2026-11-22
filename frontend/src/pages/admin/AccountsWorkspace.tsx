@@ -220,9 +220,9 @@ export default function AccountsWorkspace() {
         onChange={(e) => setSearch(e.target.value)}
       />
       <ExportButtons
-        filename="Akun_Jawara"
+        filename="Akun_Pictomatic"
         title="Akun & Hak Akses"
-        subtitle="JAWARA"
+        subtitle="Pictomatic"
         headers={["Nama", "Email", "Role", "Divisi", "Kota", "Status"]}
         rows={filtered.map((a) => [
           a.full_name,

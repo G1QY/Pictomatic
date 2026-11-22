@@ -1,4 +1,4 @@
-# Akun, role dan password JAWARA
+# Akun, role dan password Pictomatic
 
 Panduan aktif, diperbarui 15 Oktober 2026 sesuai alur akun dan lokasi absensi di repository.
 

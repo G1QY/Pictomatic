@@ -1,4 +1,4 @@
-# Panduan UI JAWARA
+# Panduan UI Pictomatic
 
 Panduan aktif, 5 Oktober 2026. Menggambarkan source baseline `805c40b`, menggantikan palet Indigo dan ketentuan bentuk dari mockup awal.
 

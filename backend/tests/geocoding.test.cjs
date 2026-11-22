@@ -11,7 +11,7 @@ test('search validates input, filters Indonesia and identifies application; no k
   const results = await service.search('  Jalan  Braga, Bandung  ');
   assert.equal(url.searchParams.get('q'), 'Jalan Braga, Bandung');
   assert.equal(url.searchParams.get('countrycodes'), 'id');
-  assert.match(options.headers['User-Agent'], /JawaraAttendance/);
+  assert.match(options.headers['User-Agent'], /PictomaticAttendance/);
   assert.equal(results[0].street, 'Jalan Braga');
   assert.equal(results[0].latitude, -6.917);
 });

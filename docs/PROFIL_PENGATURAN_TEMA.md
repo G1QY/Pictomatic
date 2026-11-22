@@ -2,7 +2,7 @@
 
 # Profil, Pengaturan, dan Tema
 
-Revisi ini diterapkan pada FotoSnaps_Absensi.zip unggahan Anda, setelah perbaikan sidebar Guest Crew.
+Revisi ini diterapkan pada Pictomatic_source.zip unggahan Anda, setelah perbaikan sidebar Guest Crew.
 
 ## Yang berubah
 

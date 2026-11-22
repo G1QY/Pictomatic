@@ -1,6 +1,6 @@
-# Sistem Absensi JAWARA - Bujangan Wajib Sejahtera
+# Pictomatic
 
-Repository ini berisi monorepo untuk aplikasi operasional JAWARA yang mencakup front-end, back-end, database/Supabase, dokumentasi, serta konfigurasi deployment.
+Repository ini berisi monorepo untuk aplikasi operasional Pictomatic yang mencakup front-end, back-end, database/Supabase, dokumentasi, serta konfigurasi deployment.
 
 - `frontend/` — aplikasi React + Vite + TypeScript + Tailwind untuk UI admin, crew, guest, dan portal absensi.
 - `backend/` — API Express.js untuk autentikasi, absensi, event, payroll, crew, store, serta integrasi Supabase/S3.
@@ -22,8 +22,8 @@ Repository ini berisi monorepo untuk aplikasi operasional JAWARA yang mencakup f
 ### 1) Clone repositori
 
 ```bash
-git clone https://github.com/G1QY/AbsensiJawara.git
-cd AbsensiJawara
+git clone https://github.com/G1QY/AbsensiPictomatic.git
+cd AbsensiPictomatic
 ```
 
 ### 2) Install dependensi

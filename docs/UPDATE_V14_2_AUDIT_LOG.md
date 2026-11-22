@@ -1,6 +1,6 @@
 > **Status dokumentasi: Catatan historis.** Isi berikut merekam versi/fitur tertentu dan belum diselaraskan penuh dengan baseline 5 Oktober 2026. Untuk setup, arsitektur, role dan rilis saat ini, gunakan [indeks dokumentasi aktif](README.md). Instruksi patch/SQL dan hasil tes di bawah berlaku pada konteks versi asalnya, bukan otomatis pada checkout sekarang.
 
-JAWARA V14.2: Audit Log
+Pictomatic V14.2: Audit Log
 
 Perubahan:
 - Tindakan memakai kalimat yang mudah dibaca. Kode asli dapat dibuka lewat Kode aktivitas.
@@ -9,7 +9,7 @@ Perubahan:
 - Jadwal massal tidak lagi ditampilkan seolah hanya untuk karyawan pada jadwal pertama.
 - Nama karyawan lebih diutamakan daripada kode EMP jika datanya masih tersedia.
 - Payroll mengambil nama dari crewId atau snapshot slip dan menampilkan periode.
-- Akun pelaksana menampilkan nama profil dan email. Nama JAWARA tidak diganti secara fiktif.
+- Akun pelaksana menampilkan nama profil dan email. Nama pelaksana tidak diganti secara fiktif.
 - Pencarian dan filter tindakan berlaku pada maksimal 200 aktivitas terbaru.
 - Desktop memakai tabel, mobile memakai kartu. Isi password tidak ditampilkan.
 

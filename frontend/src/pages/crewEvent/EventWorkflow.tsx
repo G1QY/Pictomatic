@@ -135,7 +135,7 @@ async function exportEventPDF(assignment: CrewEventAssignment, data: Record<stri
   doc.rect(0, 0, pageWidth, 40, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
-  doc.text('JAWARA', 14, 18);
+  doc.text('Pictomatic', 14, 18);
   doc.setFontSize(10);
   doc.text('Laporan Event', 14, 26);
   doc.setFontSize(12);
@@ -291,11 +291,11 @@ async function exportEventPDF(assignment: CrewEventAssignment, data: Record<stri
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`JAWARA Report — Page ${i}/${totalPages}`, 14, doc.internal.pageSize.getHeight() - 10);
+    doc.text(`Pictomatic Report — Page ${i}/${totalPages}`, 14, doc.internal.pageSize.getHeight() - 10);
     doc.text(new Date().toLocaleString(getLocale()), pageWidth - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
   }
 
-  if (download) doc.save(`JAWARA_${eventId}_${eventName.replace(/\s+/g, '_')}.pdf`);
+  if (download) doc.save(`Pictomatic_${eventId}_${eventName.replace(/\s+/g, '_')}.pdf`);
   return doc;
 }
 

@@ -142,7 +142,7 @@ export default function AdminPages({
       )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs sm:text-sm text-slate-500 leading-snug">
-          {translateUI("Data dibaca dari server JAWARA.")}
+          {translateUI("Data dibaca dari server Pictomatic.")}
         </p>
         <button
           disabled={loading}

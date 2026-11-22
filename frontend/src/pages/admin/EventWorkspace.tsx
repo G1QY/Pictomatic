@@ -358,7 +358,7 @@ export default function EventWorkspace({
           e.status,
         ]),
       ],
-      "Event-JAWARA.xlsx",
+      "Event-Pictomatic.xlsx",
     );
   const role = (a: ManagedEvent["event_assignments"][number]) =>
     [detail?.pic_crew_id === a.crew_id ? "PIC" : "", a.position]

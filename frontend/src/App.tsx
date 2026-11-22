@@ -36,37 +36,37 @@ import CrewStorePayroll from './pages/crewStore/CrewStorePayroll';
 type Toast = { id: string; message: string; type: 'success' | 'error' | 'warning' | 'info' };
 
 const pageMeta: Record<string, { breadcrumbs: string[]; title: string }> = {
-  'em-dashboard': {breadcrumbs:['JAWARA','Event Manager'],title:'Dashboard Event'},
-  'em-events': {breadcrumbs:['JAWARA','Event Manager'],title:'Kelola Event'},
-  'em-crew': {breadcrumbs:['JAWARA','Event Manager'],title:'Crew Event'},
-  'em-attendance': {breadcrumbs:['JAWARA','Event Manager'],title:'Absensi Event'},
-  'em-reports': {breadcrumbs:['JAWARA','Event Manager'],title:'Rekap Event'},
-  'admin-accounts': { breadcrumbs: ['JAWARA', 'Super Admin'], title: 'Akun & Hak Akses' },
-  'hs-dashboard': { breadcrumbs: ['JAWARA', 'Head Store'], title: 'Monitoring Kota' },
-  'hs-crew': { breadcrumbs: ['JAWARA', 'Head Store'], title: 'Crew per Cabang' },
-  'hs-attendance': { breadcrumbs: ['JAWARA', 'Head Store'], title: 'Absensi Kota' },
-  'admin-dashboard': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Dashboard' },
-  'admin-event': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Kelola Event' },
-  'admin-payroll': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Payroll' },
-  'admin-laporan': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Laporan' },
-  'admin-audit': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Audit Log' },
-  'admin-crew': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Kelola Crew' },
-  'admin-absensi': { breadcrumbs: ['JAWARA', 'Admin'], title: 'Manajemen Absensi' },
-  'ce-absensi': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Absensi Hari Ini' },
-  'ce-dashboard': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Dashboard' },
-  'ce-events': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Event Saya' },
-  'ce-workflow': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Workflow Event' },
-  'ce-inventory': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Inventory Event' },
-  'ce-operasional': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Operasional Event' },
-  'ce-payroll': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Payroll' },
-  'ce-riwayat': { breadcrumbs: ['JAWARA', 'Crew Event'], title: 'Riwayat Absensi' },
-  'cs-absensi': { breadcrumbs: ['JAWARA', 'Crew Store'], title: 'Absensi Hari Ini' },
-  'cs-dashboard': { breadcrumbs: ['JAWARA', 'Crew Store'], title: 'Dashboard' },
-  'cs-riwayat': { breadcrumbs: ['JAWARA', 'Crew Store'], title: 'Riwayat Absensi' },
-  'cs-payroll': { breadcrumbs: ['JAWARA', 'Crew Store'], title: 'Payroll' },
-  'guest-portal': { breadcrumbs: ['JAWARA', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
-  'guest-info': { breadcrumbs: ['JAWARA', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
-  'guest-help': { breadcrumbs: ['JAWARA', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
+  'em-dashboard': {breadcrumbs:['Pictomatic','Event Manager'],title:'Dashboard Event'},
+  'em-events': {breadcrumbs:['Pictomatic','Event Manager'],title:'Kelola Event'},
+  'em-crew': {breadcrumbs:['Pictomatic','Event Manager'],title:'Crew Event'},
+  'em-attendance': {breadcrumbs:['Pictomatic','Event Manager'],title:'Absensi Event'},
+  'em-reports': {breadcrumbs:['Pictomatic','Event Manager'],title:'Rekap Event'},
+  'admin-accounts': { breadcrumbs: ['Pictomatic', 'Super Admin'], title: 'Akun & Hak Akses' },
+  'hs-dashboard': { breadcrumbs: ['Pictomatic', 'Head Store'], title: 'Monitoring Kota' },
+  'hs-crew': { breadcrumbs: ['Pictomatic', 'Head Store'], title: 'Crew per Cabang' },
+  'hs-attendance': { breadcrumbs: ['Pictomatic', 'Head Store'], title: 'Absensi Kota' },
+  'admin-dashboard': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Dashboard' },
+  'admin-event': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Kelola Event' },
+  'admin-payroll': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Payroll' },
+  'admin-laporan': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Laporan' },
+  'admin-audit': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Audit Log' },
+  'admin-crew': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Kelola Crew' },
+  'admin-absensi': { breadcrumbs: ['Pictomatic', 'Admin'], title: 'Manajemen Absensi' },
+  'ce-absensi': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Absensi Hari Ini' },
+  'ce-dashboard': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Dashboard' },
+  'ce-events': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Event Saya' },
+  'ce-workflow': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Workflow Event' },
+  'ce-inventory': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Inventory Event' },
+  'ce-operasional': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Operasional Event' },
+  'ce-payroll': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Payroll' },
+  'ce-riwayat': { breadcrumbs: ['Pictomatic', 'Crew Event'], title: 'Riwayat Absensi' },
+  'cs-absensi': { breadcrumbs: ['Pictomatic', 'Crew Store'], title: 'Absensi Hari Ini' },
+  'cs-dashboard': { breadcrumbs: ['Pictomatic', 'Crew Store'], title: 'Dashboard' },
+  'cs-riwayat': { breadcrumbs: ['Pictomatic', 'Crew Store'], title: 'Riwayat Absensi' },
+  'cs-payroll': { breadcrumbs: ['Pictomatic', 'Crew Store'], title: 'Payroll' },
+  'guest-portal': { breadcrumbs: ['Pictomatic', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
+  'guest-info': { breadcrumbs: ['Pictomatic', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
+  'guest-help': { breadcrumbs: ['Pictomatic', 'Guest Mode'], title: 'Portal Absensi Guest Crew' },
 };
 
 function defaultPage(role: Role): string {
@@ -129,7 +129,7 @@ export default function App() {
   const personalPayroll = ['em-my-payroll','admin-my-payroll','hs-my-payroll','staff-payroll'].includes(activePage);
   const personalPage = ['em-my-attendance','admin-my-attendance','hs-my-attendance','staff-absensi'].includes(activePage);
   const personalHistory = ['em-my-history','admin-my-history','hs-my-history','staff-riwayat'].includes(activePage);
-  const meta = (personalPayroll || personalPage || personalHistory || activePage==='staff-dashboard') ? {breadcrumbs:['JAWARA',accountRoles[auth.role]||auth.role],title:personalPayroll?'Payroll Saya':personalPage?'Absensi Saya':personalHistory?'Riwayat Saya':'Dashboard'} : activePage.startsWith('account-') ? { breadcrumbs: ['JAWARA', role === 'guest_crew' ? 'Guest Mode' : 'Akun'], title: activePage === 'account-profile' ? 'Profil Saya' : 'Pengaturan' } : pageMeta[activePage] || pageMeta[defaultPage(role)];
+  const meta = (personalPayroll || personalPage || personalHistory || activePage==='staff-dashboard') ? {breadcrumbs:['Pictomatic',accountRoles[auth.role]||auth.role],title:personalPayroll?'Payroll Saya':personalPage?'Absensi Saya':personalHistory?'Riwayat Saya':'Dashboard'} : activePage.startsWith('account-') ? { breadcrumbs: ['Pictomatic', role === 'guest_crew' ? 'Guest Mode' : 'Akun'], title: activePage === 'account-profile' ? 'Profil Saya' : 'Pengaturan' } : pageMeta[activePage] || pageMeta[defaultPage(role)];
   const navigate = (page: string) => {
     setCurrentPage(page);
     setMobileNavOpen(false);

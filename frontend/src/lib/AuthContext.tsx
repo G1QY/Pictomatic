@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'X-FotoSnaps-Request': '1', 'Content-Type': 'application/json' },
+        headers: { 'X-Pictomatic-Request': '1', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const body = await res.json();
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    if (auth?.token) void fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'X-FotoSnaps-Request': '1', Authorization: `Bearer ${auth.token}` } }).catch(() => {});
+    if (auth?.token) void fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'X-Pictomatic-Request': '1', Authorization: `Bearer ${auth.token}` } }).catch(() => {});
     sessionVersion.current++;
     clearAuthSession();
     setAuth(null);

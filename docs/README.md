@@ -1,4 +1,4 @@
-# Dokumentasi JAWARA
+# Dokumentasi Pictomatic
 
 Panduan terbaru: [Istirahat shift, izin/sakit, dan kalender kerja](ISTIRAHAT_IZIN_JADWAL.md) — perubahan lokal 24 Oktober 2026. Lihat juga [GPS dan watermark foto absensi](ABSENSI_GPS_WATERMARK.md) dan [Payroll, jadwal, libur dan izin](PAYROLL_JADWAL.md).
 
@@ -32,7 +32,7 @@ Panduan aktif menjelaskan implementasi yang ditemukan pada source. Jika berbeda,
 
 ## PRD lama
 
-[PRD/ERD v2.0](PRD_ERD_MASTER_BujanganFood_FotoSnaps_v2_0.pdf) adalah arsip desain multi-tenant Bujangan Food dan FotoSnaps. Penggantinya adalah [PRD_ERD_CURRENT.md](PRD_ERD_CURRENT.md).
+[PRD/ERD v2.0](PRD_ERD_MASTER_BujanganFood_FotoSnaps_v2_0.pdf) adalah arsip desain versi terdahulu. Untuk model data aktif Pictomatic, gunakan PRD/ERD saat ini. Penggantinya adalah [PRD_ERD_CURRENT.md](PRD_ERD_CURRENT.md).
 
 Berkas lama berakhiran `.pdf`, tetapi format aktualnya adalah ZIP berisi tujuh gambar halaman, tujuh teks halaman dan `manifest.json`. Berkas asli dipertahankan; bukan PDF standar atau panduan skema siap dijalankan. Isinya ditinjau melalui teks halaman di dalam arsip.
 

@@ -12,7 +12,7 @@ Revisi 31 Agustus 2026. Gunakan kode dalam ZIP ini bersama migrasi baru di bawah
 2. Hentikan terminal backend dan frontend dengan Ctrl+C.
 3. Ekstrak ZIP terbaru dan salin perubahan ke proyek. Pertahankan file `backend/.env` dan `frontend/.env` Anda. ZIP tidak membawa kredensial.
 4. Isi `VITE_GOOGLE_MAPS_API_KEY` di `frontend/.env` agar lokasi Event dan Store dapat dipilih melalui Google Maps. Aktifkan Maps JavaScript API dan batasi key ke domain frontend.
-5. Buka Supabase Dashboard proyek FotoSnaps, lalu SQL Editor, New query.
+5. Buka Supabase Dashboard proyek Pictomatic, lalu SQL Editor, New query.
 6. Buka file `supabase/migrations/20260831110840_admin_branches_crew.sql`, salin seluruh isi, dan jalankan **sekali**. Migrasi 001 sampai 009 harus sudah terpasang. Jangan menjalankan ulang seluruh migrasi lama atau seed demo.
 7. Jika SQL gagal, jangan lanjut menguji penyimpanan crew. Simpan pesan error, bukan kredensial. Migrasi dibungkus transaksi sehingga kegagalan tidak meninggalkan sebagian perubahan.
 8. Dari folder backend jalankan `npm start`. Dari terminal terpisah, folder frontend, jalankan `npm run dev`.

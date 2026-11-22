@@ -1,5 +1,5 @@
 // Ringkasan angka untuk kartu dashboard. Karena DB ini sudah khusus
-// FotoSnaps, tidak perlu filter tenant_id lagi.
+// Pictomatic, tidak perlu filter tenant_id lagi.
 const supabase = require('../../config/supabaseClient');
 
 async function admin(req, res, next) {

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 export type Theme = 'light' | 'dark';
-const THEME_KEY = 'fotosnaps_theme';
-const ALERTS_KEY = 'fotosnaps_notification_badges';
+const THEME_KEY = 'pictomatic_theme';
+const ALERTS_KEY = 'pictomatic_notification_badges';
 const safeRead = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
 const PreferencesContext = createContext<{ theme: Theme; setTheme: (theme: Theme) => void; badges: boolean; setBadges: (enabled: boolean) => void } | null>(null);
 export default function PreferencesProvider({ children }: { children: ReactNode }) {

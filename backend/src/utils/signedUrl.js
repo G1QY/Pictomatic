@@ -21,7 +21,7 @@ async function uploadPrivateObject(key, body, contentType = 'application/octet-s
   return key;
 }
 
-// Database ini sudah khusus FotoSnaps, jadi tidak perlu prefix tenant lagi.
+// Database ini sudah khusus Pictomatic, jadi tidak perlu prefix tenant lagi.
 function buildAttendanceKey(userId) {
   const now = new Date();
   const yyyy = now.getFullYear();

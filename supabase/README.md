@@ -1,4 +1,4 @@
-# Database Supabase JAWARA
+# Database Supabase Pictomatic
 
 Panduan aktif, 5 Oktober 2026. Folder ini adalah sumber SQL aplikasi saat ini. Database dipisah per perusahaan, tanpa tenants/user_tenants atau tenant_id sebagai pemisah akses.
 

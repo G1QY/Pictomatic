@@ -27,8 +27,8 @@ async function sendOtpEmail(email, otp) {
     body: JSON.stringify({
       from,
       to: [email],
-      subject: 'Kode OTP Reset Password FotoSnaps',
-      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px"><h2>Reset Password FotoSnaps</h2><p>Gunakan kode berikut untuk melanjutkan reset password:</p><p style="font-size:30px;font-weight:700;letter-spacing:8px">${otp}</p><p>Kode berlaku selama 5 menit. Abaikan email ini jika Anda tidak meminta reset password.</p></div>`,
+      subject: 'Kode OTP Reset Password Pictomatic',
+      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px"><h2>Reset Password Pictomatic</h2><p>Gunakan kode berikut untuk melanjutkan reset password:</p><p style="font-size:30px;font-weight:700;letter-spacing:8px">${otp}</p><p>Kode berlaku selama 5 menit. Abaikan email ini jika Anda tidak meminta reset password.</p></div>`,
     }),
   });} catch {throw Object.assign(new Error('Backend tidak dapat menghubungi layanan email. Periksa koneksi internet server lalu coba lagi.'),{status:503});}
 

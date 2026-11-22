@@ -12,10 +12,10 @@ const unlockScript = `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis
 function createGeocoder({ baseUrl = process.env.GEOCODING_BASE_URL || 'https://nominatim.openstreetmap.org',
   fetcher = global.fetch, getRedis = () => require('../../security/http').getSecurityStore(),
   now = Date.now, wait = sleep, queueMs = 4500,
-  userAgent = process.env.GEOCODING_USER_AGENT || 'JawaraAttendance/10 (+https://github.com/G1QY/AbsensiJawara)' } = {}) {
+  userAgent = process.env.GEOCODING_USER_AGENT || 'PictomaticAttendance/10 (+https://github.com/G1QY/Pictomatic)' } = {}) {
   const endpoint = new URL(baseUrl);
   if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error('GEOCODING_BASE_URL harus URL HTTPS tanpa kredensial/query.');
-  const prefix = 'jawara:geo:v2:' + createHash('sha256').update(endpoint.href).digest('hex').slice(0, 12) + ':';
+  const prefix = 'pictomatic:geo:v2:' + createHash('sha256').update(endpoint.href).digest('hex').slice(0, 12) + ':';
   const cache = new Map(), pending = new Map();
   let locked = false, nextAt = 0, cooldown = 0;
   async function takeLock(redis) {

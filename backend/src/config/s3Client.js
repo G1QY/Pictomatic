@@ -1,7 +1,7 @@
 // Private S3 client — untuk foto absensi, waste, event checklist, dan Auto-PDF report.
 // Ref: PRD Section 11 (Storage Architecture)
 //
-// Struktur bucket (khusus FotoSnaps, tidak ada lagi folder per tenant):
+// Struktur bucket (khusus Pictomatic, tidak ada lagi folder per tenant):
 //   attendance/yyyy/mm/{user_id}_{timestamp}.jpg
 //   waste/
 //   event-checklists/
@@ -21,6 +21,6 @@ const s3 = new S3Client({
   forcePathStyle: true,
 });
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'fotosnaps-private';
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'pictomatic-private';
 
 module.exports = { s3, BUCKET_NAME };

@@ -26,7 +26,7 @@ Frontend DAN backend harus diperbarui. Tidak ada SQL/migrasi baru pada V10. Migr
 3. Jalankan perintah PowerShell satu per satu:
 
 ```powershell
-cd D:\AbsensiJawara\backend
+cd D:\AbsensiPictomatic\backend
 npm ci --include=dev
 npm test
 cd ..\frontend
@@ -51,7 +51,7 @@ Server publik Nominatim membatasi SELURUH aplikasi maksimum 1 request/detik, buk
 
 Untuk production, REDIS_URL yang sudah diwajibkan proyek harus menunjuk ke Redis yang SAMA bagi seluruh replika backend. Cache, kunci provider, dan cooldown dibagikan di sana. Jika Redis terputus, layanan alamat tidak melewati pembatas. Mode development tanpa Redis hanya untuk satu proses backend.
 
-Server publik tidak dirancang untuk lonjakan absensi 1.000 karyawan. Sebelum penggunaan sebesar itu, gunakan instance Nominatim sendiri atau layanan dengan kapasitas dan API Nominatim yang sesuai. Ubah GEOCODING_BASE_URL pada backend dan restart. Nilai harus URL HTTPS kompatibel search/reverse JSONv2, tanpa query atau kredensial. Pergantian provider tidak memerlukan perubahan frontend. Set GEOCODING_USER_AGENT dengan nama aplikasi dan URL/email kontak operator bila diperlukan. Default sudah mengidentifikasi repo Jawara.
+Server publik tidak dirancang untuk lonjakan absensi 1.000 karyawan. Sebelum penggunaan sebesar itu, gunakan instance Nominatim sendiri atau layanan dengan kapasitas dan API Nominatim yang sesuai. Ubah GEOCODING_BASE_URL pada backend dan restart. Nilai harus URL HTTPS kompatibel search/reverse JSONv2, tanpa query atau kredensial. Pergantian provider tidak memerlukan perubahan frontend. Set GEOCODING_USER_AGENT dengan nama aplikasi dan URL/email kontak operator bila diperlukan. Default sudah mengidentifikasi repo Pictomatic.
 
 Pratinjau peta memakai tile OSM standar dengan atribusi, Referer browser, dan cache HTTP. Tidak ada unduhan offline/prefetch wilayah. Kebijakan: https://operations.osmfoundation.org/policies/tiles/
 

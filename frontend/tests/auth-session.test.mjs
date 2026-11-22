@@ -8,7 +8,7 @@ const sessionSource = await readFile(new URL('../src/lib/authSession.ts', import
 const apiSource = await readFile(new URL('../src/lib/apiClient.ts', import.meta.url), 'utf8');
 
 async function browser({ saved = '{broken-json', blocked = false, status = 200 } = {}) {
-  const storage = new Map([['fotosnaps_auth', saved], ['guest_reports', 'keep']]);
+  const storage = new Map([['pictomatic_auth', saved], ['guest_reports', 'keep']]);
   const calls = [];
   let reloads = 0;
   const context = vm.createContext({
@@ -39,7 +39,7 @@ test('opening app ignores legacy account, corrupt JSON and preserves unrelated d
   for (const saved of ['{broken-json', JSON.stringify({ token: 'old-token', role: 'SUPER_ADMIN' }), JSON.stringify({ role: 'GUEST_CREW' })]) {
     const b = await browser({ saved });
     assert.equal(b.session.getAccessToken(), null);
-    assert.equal(b.storage.has('fotosnaps_auth'), false);
+    assert.equal(b.storage.has('pictomatic_auth'), false);
     assert.equal(b.storage.get('guest_reports'), 'keep');
     await assert.rejects(b.api.get('/crew'), { status: 401 });
     assert.equal(b.calls.length, 0);
@@ -60,7 +60,7 @@ test('login token reaches JSON and photo requests without persistence', async ()
   await b.api.postForm('/attendance/check-in', {});
   assert.equal(b.calls.length, 2);
   for (const call of b.calls) assert.equal(call.options.headers.Authorization, 'Bearer new-token');
-  assert.equal(b.storage.has('fotosnaps_auth'), false);
+  assert.equal(b.storage.has('pictomatic_auth'), false);
 });
 
 test('reopening/reloading starts a new session without the previous token', async () => {

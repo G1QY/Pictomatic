@@ -3,9 +3,9 @@ const {describe}=require('../src/modules/auditLogs/auditPresentation');
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 function database(data,calls=[]) {return {from(table){return {select(columns){return {async in(key,ids){calls.push({table,columns,key,ids});return {data:(data[table]||[]).filter(r=>ids.includes(r.id)),error:null};}};}};}};}
 test('employee names take precedence over legacy EMP codes, actor remains the recorded account',async()=>{
- const rows=[{id:id(1),entity_type:'crew',entity_id:id(2),new_data:{employee_code:'EMP-legacy'},actor_user_id:id(4),actor:{full_name:'JAWARA',email:'admin@example.test'}}];
+ const rows=[{id:id(1),entity_type:'crew',entity_id:id(2),new_data:{employee_code:'EMP-legacy'},actor_user_id:id(4),actor:{full_name:'Pictomatic',email:'admin@example.test'}}];
  const result=await describe(database({crew:[{id:id(2),employee_code:'EMP-legacy',user:{full_name:'Aila'}}]}),rows);
- assert.equal(result[0].entity_name,'Aila');assert.equal(result[0].actor_name,'JAWARA');assert.equal(result[0].actor.email,'admin@example.test');assert.deepEqual(result[0].new_data,rows[0].new_data);
+ assert.equal(result[0].entity_name,'Aila');assert.equal(result[0].actor_name,'Pictomatic');assert.equal(result[0].actor.email,'admin@example.test');assert.deepEqual(result[0].new_data,rows[0].new_data);
 });
 test('payroll adjustment resolves nested crewId, deleted paid/reopened slips use historical person snapshots, policy has a target',async()=>{
  const rows=[{action:'PAYROLL_ADJUSTMENT',entity_type:'payroll',entity_id:null,new_data:{period:'2026-09-01',data:{crewId:id(2)}}},{action:'PAYROLL_REOPEN',entity_type:'payroll',old_data:{crew_id:null,snapshot:{person:{full_name:'Karyawan lama'}}},new_data:{period:'2026-09-01'}},{action:'PAYROLL_POLICY',entity_type:'payroll',new_data:{period:'2026-09-01'}}];

@@ -567,7 +567,7 @@ export default function KelolaCrew() {
               />
             </label>
             <label className="text-sm text-slate-700">{translateUI("Perusahaan") + " "}<input list="crew-companies" maxLength={150} className={control} value={form.companyName} onChange={e=>change("companyName",e.target.value)} placeholder={translateUI("Pilih atau ketik perusahaan")} />
-              <datalist id="crew-companies">{[...new Set(["Fotosnaps", "Jawara Group", "Kripik Bujangan", ...crew.map(c=>c.company_name).filter(Boolean)])].map(name=><option key={name} value={name} />)}</datalist>
+              <datalist id="crew-companies">{[...new Set(["Pictomatic", ...crew.map(c=>c.company_name).filter(Boolean)])].map(name=><option key={name} value={name} />)}</datalist>
             </label>
             <label className="text-sm text-slate-700">{translateUI("Jabatan") + " "}<input maxLength={100} className={control} value={form.jobTitle} onChange={e=>change("jobTitle",e.target.value)} placeholder={translateUI("Contoh: Supervisor, Kasir, Fotografer")} />
               <span className="text-xs text-slate-500">{translateUI("Jabatan tidak mengubah hak akses akun.")}</span>

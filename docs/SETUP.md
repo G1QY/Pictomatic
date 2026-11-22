@@ -1,4 +1,4 @@
-# Setup lokal dan deployment JAWARA
+# Setup lokal dan deployment Pictomatic
 
 Panduan aktif, 5 Oktober 2026. Dasar: source baseline `805c40b`.
 
@@ -27,7 +27,7 @@ Ganti placeholder dengan konfigurasi sebenarnya. Service-role key hanya di serve
 | Variabel tambahan | Kegunaan |
 | --- | --- |
 | `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Penyimpanan S3-compatible untuk foto/bukti/PDF. |
-| `S3_BUCKET_NAME` | Bucket private; default `fotosnaps-private`. |
+| `S3_BUCKET_NAME` | Bucket private; default `pictomatic-private`. |
 | `REDIS_URL` | Security store, rate limit dan koordinasi/cache geocoding. Wajib dalam production. |
 | `RESEND_API_KEY`, `OTP_EMAIL_FROM` | OTP reset password; domain pengirim harus sesuai konfigurasi Resend. |
 | `CREW_PASSWORD_VAULT_KEY` | Kunci 32 byte Base64 untuk salinan password terenkripsi. |
@@ -83,7 +83,7 @@ Backend production membutuhkan `NODE_ENV=production`, `HOST=0.0.0.0`, port platf
 
 Frontend memakai origin HTTPS API saat build. Perubahan `VITE_*` membutuhkan rebuild/deploy frontend; perubahan environment backend membutuhkan restart/deploy backend.
 
-[render.yaml](../render.yaml) adalah template, bukan salinan konfigurasi production. Nama layanan masih `fotosnaps-demo-*`, Node blueprint 22.22.0, CI memakai 24. Selaraskan runtime setelah validasi. Key vault belum tercantum dalam blueprint dan dikelola terpisah bila fiturnya dipakai.
+[render.yaml](../render.yaml) adalah template, bukan salinan konfigurasi production. Nama layanan masih `pictomatic-demo-*`, Node blueprint 22.22.0, CI memakai 24. Selaraskan runtime setelah validasi. Key vault belum tercantum dalam blueprint dan dikelola terpisah bila fiturnya dipakai.
 
 ## Diagnosis
 

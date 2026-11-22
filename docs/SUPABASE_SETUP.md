@@ -1,4 +1,4 @@
-# Setup Supabase untuk JAWARA
+# Setup Supabase untuk Pictomatic
 
 Panduan aktif, 5 Oktober 2026. Environment/deployment: [SETUP](SETUP.md). SQL: [panduan database](../supabase/README.md).
 

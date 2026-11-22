@@ -2,7 +2,7 @@
 
 Diperbarui 5 Oktober 2026.
 
-Folder ini bukan sumber migrasi utama JAWARA. `migrations/20260826_password_reset_otps.sql` dipertahankan sebagai jejak perubahan lama; jangan menjalankan folder ini bersama semua SQL Supabase sebagai installer otomatis.
+Folder ini bukan sumber migrasi utama Pictomatic. `migrations/20260826_password_reset_otps.sql` dipertahankan sebagai jejak perubahan lama; jangan menjalankan folder ini bersama semua SQL Supabase sebagai installer otomatis.
 
 Gunakan [panduan database](../supabase/README.md) dan [PRD aktif](../docs/PRD_ERD_CURRENT.md).
 

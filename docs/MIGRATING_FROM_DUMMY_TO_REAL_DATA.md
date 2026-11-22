@@ -21,7 +21,7 @@ Ini kelompok route, bukan daftar izin CRUD semua pengguna. Periksa method dan pe
 
 ## Browser dan autentikasi
 
-Token berada di memori `authSession.ts`; client menambahkan `Authorization` dan `X-FotoSnaps-Request`, tanpa `X-Tenant-Id`. Respons 401 pada request terlindungi mengakhiri sesi lokal dan memuat ulang halaman.
+Token berada di memori `authSession.ts`; client menambahkan `Authorization` dan `X-Pictomatic-Request`, tanpa `X-Tenant-Id`. Respons 401 pada request terlindungi mengakhiri sesi lokal dan memuat ulang halaman.
 
 Tema/bahasa/preferensi dan riwayat legacy tertentu dapat berada di browser. Data lokal bukan bukti pengajuan tersimpan di server. Guest baru harus menerima sukses API; datanya tidak otomatis menjadi `attendance_logs` atau payroll karyawan.
 

@@ -5,7 +5,7 @@ async function start(){
  await connectSecurityStore();
  const app=require('./app');
  const stopEventClock=require('./services/eventAutoStart').startEventClock(require('./config/supabaseClient')); 
- const server=app.listen(process.env.PORT||4000,process.env.HOST||'127.0.0.1',()=>console.log('FotoSnaps backend ready'));
+ const server=app.listen(process.env.PORT||4000,process.env.HOST||'127.0.0.1',()=>console.log('Pictomatic backend ready'));
  server.requestTimeout=30000;server.headersTimeout=15000;
  const stop=()=>{stopEventClock();server.close(()=>process.exit(0));};process.on('SIGTERM',stop);process.on('SIGINT',stop);
 }

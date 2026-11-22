@@ -1,17 +1,16 @@
 import {t as translateUI} from '../lib/i18n';
 import { useState, useRef, useEffect } from 'react';
 import './LoginPage.css';
-import companyLandscape from '../assets/company-landscape.jpg';
-import companyPortrait from '../assets/company-portrait.jpg';
-import JawaraLogo from '../assets/landscape.jpg';
 import { useAuth } from '../lib/AuthContext';
 import FloatingInput from '../components/ui/FloatingInput';
 import Modal from '../components/ui/Modal';
 
+const PictomaticLogo = '/pictomatic-logo.svg';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000') + '/api';
-const ADMIN_WHATSAPP_NUMBER = (import.meta.env.VITE_ADMIN_WHATSAPP || '6281214989974').toString().replace(/\D/g, '');
-const waHelpMessage = encodeURIComponent('Halo Admin JAWARA, saya memerlukan bantuan untuk akses akun / kendala login di sistem JAWARA.');
-const waAdminUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${waHelpMessage}`;
+const ADMIN_WHATSAPP_NUMBER = (import.meta.env.VITE_ADMIN_WHATSAPP || '').toString().replace(/\D/g, '');
+const waHelpMessage = encodeURIComponent('Halo Admin Pictomatic, saya memerlukan bantuan untuk akses akun / kendala login di sistem Pictomatic.');
+const waAdminUrl = ADMIN_WHATSAPP_NUMBER ? `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${waHelpMessage}` : '';
 
 type PageStep = 'login' | 'forgot' | 'otp-verify' | 'new-password' | 'success';
 
@@ -82,7 +81,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
-        headers: { 'X-FotoSnaps-Request': '1', 'Content-Type': 'application/json' },
+        headers: { 'X-Pictomatic-Request': '1', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim() }),
       });
       const body = await res.json();
@@ -154,7 +153,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
         method: 'POST',
-        headers: { 'X-FotoSnaps-Request': '1', 'Content-Type': 'application/json' },
+        headers: { 'X-Pictomatic-Request': '1', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim(), otp }),
       });
       const body = await res.json();
@@ -181,7 +180,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
-        headers: { 'X-FotoSnaps-Request': '1', 'Content-Type': 'application/json' },
+        headers: { 'X-Pictomatic-Request': '1', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim(), resetToken, newPassword }),
       });
       const body = await res.json();
@@ -235,7 +234,7 @@ export default function LoginPage() {
       {/* Header text */}
       <div className="space-y-1.5 text-center">
         <h1 className="text-[24px] font-semibold text-[#1a1c1c] tracking-tight">{translateUI("Selamat Datang")}</h1>
-        <p className="text-[14px] text-[#1a1c1c]">{translateUI("Masuk ke akun JAWARA anda")}</p>
+        <p className="text-[14px] text-[#1a1c1c]">{translateUI("Masuk ke akun Pictomatic anda")}</p>
       </div>
 
       {/* Login Form */}
@@ -277,7 +276,7 @@ export default function LoginPage() {
         {/* Options row */}
         <div className="flex items-center justify-between pt-1">
           <a
-            href={waAdminUrl}
+            href={waAdminUrl || undefined} aria-disabled={!ADMIN_WHATSAPP_NUMBER} onClick={(event) => { if (!ADMIN_WHATSAPP_NUMBER) event.preventDefault(); }}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[12px] font-medium text-[#1a1c1c] hover:text-[#25D366] uppercase tracking-wider transition-colors inline-flex items-center gap-1.5 group"
@@ -398,7 +397,9 @@ export default function LoginPage() {
         <div className="pt-2 text-center">
           <p className="text-[12px] text-[#1a1c1c]">{" " + translateUI("Perlu bantuan akses akun?")}{' '}
             <a
-              href={waAdminUrl}
+              href={waAdminUrl || undefined}
+              aria-disabled={!ADMIN_WHATSAPP_NUMBER}
+              onClick={(event) => { if (!ADMIN_WHATSAPP_NUMBER) event.preventDefault(); }}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#2e0052] font-semibold hover:underline inline-flex items-center gap-1"
@@ -583,16 +584,16 @@ export default function LoginPage() {
 
   return (
     <div className="login-page min-h-screen flex flex-col md:flex-row bg-[#f9f9f9] text-[#1a1c1c]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <img src={companyPortrait} alt="" aria-hidden="true" className="login-mobile-background" />
+      
       {/* Form Section (Left) */}
       <div className="login-form-section w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10 relative z-10">
         <div className="login-panel w-full max-w-sm space-y-8">
           {/* Brand / Logo */}
           <div className="flex items-center justify-center gap-2.5 mb-10">
             <div className="h-10 w-14 rounded-[6px] overflow-hidden flex-shrink-0 ring-1 ring-[#e2e8f0] bg-white">
-              <img src={JawaraLogo} alt="JAWARA" className="h-full w-full object-cover" />
+              <img src={PictomaticLogo} alt="Pictomatic" className="h-full w-full object-contain" />
             </div>
-            <span className="text-[22px] font-semibold tracking-tighter uppercase text-[#1a1c1c]">JAWARA</span>
+            <span className="text-[22px] font-semibold tracking-tighter uppercase text-[#1a1c1c]">Pictomatic</span>
           </div>
 
           {/* Step content with animation */}
@@ -607,12 +608,12 @@ export default function LoginPage() {
             {renderStepContent()}
           </div>
 
-          <p className="text-[11px] text-[#1a1c1c] text-center">&copy; 2026 JAWARA. All rights reserved.</p>
+          <p className="text-[11px] text-[#1a1c1c] text-center">&copy; 2026 Pictomatic. All rights reserved.</p>
         </div>
       </div>
 
       <div className="login-company-visual hidden md:flex md:w-1/2">
-        <img src={companyLandscape} alt="JAWARA, Burger Chill, dan Kripik Bujangan" className="login-company-image" />
+        <img src={PictomaticLogo} alt="Pictomatic" className="login-company-image" />
       </div>
 
       <Modal open={showGuestModal} onClose={() => setShowGuestModal(false)} title={translateUI("Masuk sebagai Guest Crew")}>

@@ -25,22 +25,22 @@ Paket berisi source lengkap dan `update.patch` terhadap commit dasar di atas. Un
 ```powershell
 git status --short
 git switch -c update/dashboard-lokasi-bahasa
-git apply --check D:\Download\Jawara_Update_V9\update.patch
+git apply --check D:\Download\Pictomatic_Update_V9\update.patch
 ```
 
 Jika pemeriksaan berhasil, terapkan:
 
 ```powershell
-git apply --index D:\Download\Jawara_Update_V9\update.patch
+git apply --index D:\Download\Pictomatic_Update_V9\update.patch
 git diff --cached --stat
 ```
 
-Jika `git apply --check` gagal atau ada perubahan lokal, simpan perubahan lokal dahulu dan bandingkan file dengan folder `AbsensiJawara` dalam paket. Jangan memakai reset/hapus file untuk memaksakan patch. Source lengkap tidak berisi `.env`, `node_modules`, atau `dist`.
+Jika `git apply --check` gagal atau ada perubahan lokal, simpan perubahan lokal dahulu dan bandingkan file dengan folder `Pictomatic` dalam paket. Jangan memakai reset/hapus file untuk memaksakan patch. Source lengkap tidak berisi `.env`, `node_modules`, atau `dist`.
 
 Jalankan perintah PowerShell satu per satu (kompatibel dengan Windows PowerShell yang belum mendukung `&&`). Hentikan dev server proyek sebelum `npm ci` jika berkas LightningCSS sedang terkunci.
 
 ```powershell
-cd D:\AbsensiJawara\backend
+cd D:\Pictomatic\backend
 npm ci --include=dev
 npm start
 ```
@@ -48,7 +48,7 @@ npm start
 Di terminal kedua:
 
 ```powershell
-cd D:\AbsensiJawara\frontend
+cd D:\Pictomatic\frontend
 npm ci --include=dev
 npx tsc --noEmit
 npm run build

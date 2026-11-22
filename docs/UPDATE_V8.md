@@ -37,7 +37,7 @@ Semua berkas sumber pada paket v3–v7 memiliki padanan dalam repo ini setelah p
 Contoh menjalankan frontend pada Windows PowerShell setelah source diperbarui:
 
 ```powershell
-cd D:\AbsensiJawara\frontend
+cd D:\Pictomatic\frontend
 npm ci --include=dev
 # Jalankan perintah berikut hanya bila instalasi berhasil.
 npm run build
