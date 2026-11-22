@@ -1,0 +1,38 @@
+const router = require('express').Router();
+const multer = require('multer');
+const controller = require('./attendance.controller');
+
+const personalAttendance = require('../../middlewares/requireRole')('CREW_STORE','CREW_EVENT','HEAD_STORE','ADMIN_STORE','EVENT_MANAGER','HEAD_OFFICE','OFFICE_STAFF','PRODUCTION_STAFF');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1, fields: 30, fieldSize: 10000, parts: 31 } });
+
+// Resolve the crew's GPS point without granting access to admin location search.
+router.post('/location', personalAttendance, require('../../security/http').createLocationLimits(),
+  require('../locations/locations.routes').reverseHandler);
+
+// POST /attendance/check-in
+router.post('/check-in', personalAttendance, upload.single('photo'), controller.checkIn);
+
+// POST /attendance/{id}/check-out
+router.post('/:id/check-out', personalAttendance, upload.single('photo'), controller.checkOut);
+
+// POST /attendance/{id}/dead-device-photo — foto device mati sebelum clock out
+router.post('/:id/dead-device-photo', personalAttendance, upload.single('photo'), controller.uploadDeadDevicePhoto);
+router.post('/:id/break/:action', personalAttendance, upload.single('photo'), require('./attendanceBreaks.controller').recordBreak);
+
+// GET /attendance/today — WAJIB sebelum /:id
+router.get('/today', controller.today);
+
+// GET /attendance/calendar?month=YYYY-MM — WAJIB didaftar SEBELUM /:id,
+// kalau tidak Express akan menganggap "calendar" sebagai value :id.
+router.get('/calendar', controller.calendar);
+
+// GET /attendance
+router.get('/', controller.list);
+
+// GET /attendance/{id}
+router.get('/:id', controller.getOne);
+
+// PATCH /attendance/{id}
+router.patch('/:id', controller.update);
+
+module.exports = router;

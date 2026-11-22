@@ -1,0 +1,21 @@
+import {useEffect,useState} from 'react';
+import {api,ApiError} from '../../lib/apiClient';
+import {useAuth} from '../../lib/AuthContext';
+
+export interface StoreWorkSchedule {id:string;schedule_date:string;start_time:string;end_time:string;shift_number?:number;late_tolerance_minutes:number;overtime_preapproved:boolean}
+export interface StoreAttendance {store_schedule?:StoreWorkSchedule|null;id:string;attendance_date:string;check_in:string|null;check_out:string|null;status:string;review_status:string;late_minutes:number;overtime_minutes:number;overtime_status:string}
+export interface StoreWorkspace {crew:{id:string;company_name?:string;job_title?:string;division?:string;employee_code:string;base_salary:number;status:string;user?:{full_name:string}|null};assignment:{id:string;status:string;start_date:string;end_date:string|null;store?:{id:string;name:string;status:string;branch?:{name:string;city_name?:string}|null}|null}|null;schedules:Array<{id:string;schedule_date:string;start_time:string;end_time:string;shift_number?:number;late_tolerance_minutes:number;overtime_preapproved:boolean}>;attendance:StoreAttendance[];permissions:Array<{start_date:string;end_date:string;type:'SICK'|'PERMIT'|'PERMISSION'|'LEAVE'|'OTHER'|'DAY_OFF';status:string;reason?:string}>}
+
+export function useStoreWorkspace(){
+ const {auth}=useAuth();const[data,setData]=useState<StoreWorkspace|null>(null);const[loading,setLoading]=useState(true);const[error,setError]=useState('');
+ useEffect(()=>{let active=true,running=false;setLoading(true);const refresh=async()=>{if(running)return;running=true;try{const value=await api.get<StoreWorkspace>('/crew-store/workspace');if(active){setData(value);setError('');}}catch(reason){if(active)setError(reason instanceof ApiError?reason.message:'Data pekerjaan tidak dapat dimuat.');}finally{running=false;if(active)setLoading(false);}};void refresh();const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refresh);};},[auth?.user.id]);return{data,loading,error};
+}
+
+export const wibDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta'}).format(new Date());
+export const clock=(value:string|null)=>value?new Date(value).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}):'—';
+export const dateLabel=(value:string)=>new Date(`${value}T00:00:00+07:00`).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'short',timeZone:'Asia/Jakarta'});
+export const rupiah=(value:number)=>`Rp${Math.round(value||0).toLocaleString('id-ID')}`;
+export function attendanceSummary(data:StoreWorkspace|null,period=wibDate().slice(0,7)){
+ const accepted=(data?.attendance||[]).filter(row=>row.attendance_date.startsWith(period)&&row.check_in&&row.check_out&&['PRESENT','LATE'].includes(row.status)&&['APPROVED','NOT_REQUIRED'].includes(row.review_status));
+ return {present:new Set(accepted.map(row=>row.attendance_date)).size,workDays:new Set((data?.schedules||[]).filter(row=>row.schedule_date.startsWith(period)).map(row=>row.schedule_date)).size,lateMinutes:accepted.reduce((n,row)=>n+Math.max(0,Number(row.late_minutes)||0),0),overtimeHours:accepted.filter(row=>row.overtime_status==='APPROVED').reduce((n,row)=>n+Math.floor(Math.max(0,Number(row.overtime_minutes)||0)/60),0)};
+}

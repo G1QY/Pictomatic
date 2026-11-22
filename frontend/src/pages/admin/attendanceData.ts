@@ -1,0 +1,94 @@
+import {accountRoles} from '../../lib/accountRoles';
+import type { GuestAttendanceRecord } from '../guest/GuestCrewPortal';
+export type Source = 'registered' | 'guest' | 'local';
+export interface Schedule { shift_number?:number; schedule_date: string; start_time: string; end_time: string; late_tolerance_minutes?: number; break_start_time?:string|null; break_end_time?:string|null }
+export interface RegisteredAttendance {
+  break_started_at?:string|null;break_ended_at?:string|null;breakStartPhoto?:string;breakEndPhoto?:string;break_start_lat?:number;break_start_lng?:number;break_end_lat?:number;break_end_lng?:number;
+  check_in_location_mode?: "ASSIGNED" | "ANYWHERE"; check_out_location_mode?: "ASSIGNED" | "ANYWHERE";
+  check_in_distance_m?: number; check_out_distance_m?: number;
+  check_in_lat?:number|null; check_in_lng?:number|null; check_out_lat?:number|null; check_out_lng?:number|null;
+  id:string; attendance_date:string; check_in:string|null; check_out:string|null; status:string; late_minutes:number;
+  overtime_minutes:number; overtime_status:string; review_status:string; review_note:string;
+  check_in_note:string; check_out_note:string; inPhoto?:string; outPhoto?:string; deadDevicePhoto?:string; dead_device_note?:string;
+  crew:{company_name?:string;job_title?:string;division?:string;employee_code:string;user:{full_name:string;email:string;phone_number:string;user_roles?:{role:{code:string}}[]}}|null;
+  store_assignment:{store:{name:string;location_kind?:string;branch?:{name:string;city_name?:string}}}|null; event_assignment:{event:{event_name:string;branch?:{name:string;city_name?:string}}}|null;
+  store_schedule:Schedule|null; event_schedule:Schedule|null;
+}
+export interface ServerGuest {
+ latitude?:number|null; longitude?:number|null; accuracy?:number|null;
+ company_name?:string;job_title?:string;
+ assignment_kind?: "STORE" | "EVENT" | "OFFICE";
+  id:string;legacy_id:string|null;full_name:string;phone:string;crew_type:string;location_name:string;position:string;
+  clock_type:'IN'|'OUT';occurred_at:string;received_at:string;time_source:string;note:string;review_status:string;review_note:string;
+  inPhoto?:string;outPhoto?:string;
+}
+export interface AttendanceRow {
+  breakStartedAt?:string|null;breakEndedAt?:string|null;breakStartPhoto?:string;breakEndPhoto?:string;breakStartGPS?:GPSPoint|null;breakEndGPS?:GPSPoint|null;
+  deadDevicePhoto?:string; deadDeviceNote?:string;
+  inLocationMode?: string; outLocationMode?: string; inDistance?: number; outDistance?: number;
+ inGPS?:GPSPoint|null; outGPS?:GPSPoint|null;
+ companyName?:string;jobTitle?:string;
+  id:string;source:Source;name:string;phone:string;email:string;employeeCode:string;kind:string;location:string;date:string;
+  schedule:Schedule|null;clockIn:string|null;clockOut:string|null;status:string;lateMinutes:number|null;overtimeMinutes:number|null;
+  overtimeStatus:string;review:string;reviewNote:string;inNote:string;outNote:string;inPhoto:string;outPhoto:string;
+  legacy?:GuestAttendanceRecord; timeSource:string;
+}
+export interface GPSPoint { latitude:number; longitude:number; accuracy:number|null }
+export function gpsPoint(lat:unknown,lng:unknown,accuracy:unknown=null):GPSPoint|null {
+  if(lat===null||lat===undefined||lat===''||lng===null||lng===undefined||lng==='')return null;
+  const latitude=Number(lat),longitude=Number(lng);
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180)return null;
+  const measured=accuracy===null||accuracy===undefined||accuracy===''?null:Number(accuracy);
+  return {latitude,longitude,accuracy:measured!==null&&Number.isFinite(measured)&&measured>=0?measured:null};
+}
+export const gpsLink=(point:GPSPoint|null|undefined)=>point?`https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}`:'';
+export const wibDate=(value:string|Date=new Date())=>{
+  const date=new Date(value);return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta'}).format(date);
+};
+export const stamp=(value:string|null)=>value?new Date(value).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Belum tercatat';
+export function legacyTime(g:GuestAttendanceRecord):string|null {
+  if(g.occurredAt && Number.isFinite(Date.parse(g.occurredAt)))return g.occurredAt;
+  const months=['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+  const text=`${g.dateFull||''} ${g.timestamp||''}`.toLowerCase();
+  const d=text.match(/(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+(\d{4})/);
+  const t=(g.timeShort||'').match(/^(\d{1,2})[.:](\d{2})$/)||text.match(/(?:•|pukul)\s*(\d{1,2})[.:](\d{2})/);
+  if(!d||!t||+t[1]>23||+t[2]>59)return null;
+  const day=`${d[3]}-${String(months.indexOf(d[2])+1).padStart(2,'0')}-${d[1].padStart(2,'0')}`;
+  const iso=`${day}T${t[1].padStart(2,'0')}:${t[2]}:00+07:00`;
+  return Number.isFinite(Date.parse(iso))&&wibDate(iso)===day?iso:null;
+}
+export const reviewLabel=(v:string)=>({PENDING:'Menunggu tinjauan',APPROVED:'Disetujui',REJECTED:'Ditolak',NOT_REQUIRED:'Belum ditinjau manual',NONE:'Tidak ada'}[v]||v);
+export const scheduleLabel=(s:Schedule|null)=>s?`${s.shift_number?`Shift ${s.shift_number} · `:""}${s.start_time.slice(0,5)} – ${s.end_time.slice(0,5)} WIB${s.end_time<=s.start_time?' (+1 hari)':''}`:'Belum ada jadwal';
+export function fromRegistered(a:RegisteredAttendance):AttendanceRow {
+  const schedule=a.store_schedule||a.event_schedule;
+  const place=a.event_assignment?.event || a.store_assignment?.store;
+  const location=[a.event_assignment?.event?.event_name||a.store_assignment?.store?.name,...[place?.branch?.city_name,place?.branch?.name].filter((v,i,arr)=>v&&arr.indexOf(v)===i)].filter(Boolean).join(' · ');
+  const status=({PRESENT:'Tepat Waktu',ON_TIME:'Tepat Waktu',LATE:'Telat',ABSENT:'Tidak hadir',PERMISSION:'Izin',SICK:'Sakit',HOLIDAY:'Libur',NOT_SCHEDULED:'Tidak dijadwalkan',PENDING:schedule?'Menunggu verifikasi':'Belum dapat dinilai'} as Record<string,string>)[a.status]||a.status;
+  return {breakStartedAt:a.break_started_at,breakEndedAt:a.break_ended_at,breakStartPhoto:a.breakStartPhoto,breakEndPhoto:a.breakEndPhoto,breakStartGPS:gpsPoint(a.break_start_lat,a.break_start_lng),breakEndGPS:gpsPoint(a.break_end_lat,a.break_end_lng),inLocationMode:a.check_in_location_mode,outLocationMode:a.check_out_location_mode,inDistance:a.check_in_distance_m,outDistance:a.check_out_distance_m,inGPS:gpsPoint(a.check_in_lat,a.check_in_lng),outGPS:gpsPoint(a.check_out_lat,a.check_out_lng),companyName:a.crew?.company_name||'',jobTitle:[a.crew?.job_title,a.crew?.division].filter(Boolean).join(' · '),id:a.id,source:'registered',name:a.crew?.user?.full_name||'Crew',phone:a.crew?.user?.phone_number||'',email:a.crew?.user?.email||'',employeeCode:a.crew?.employee_code||'',kind:accountRoles[a.crew?.user?.user_roles?.[0]?.role.code||''] || (a.event_assignment?'Crew Event':a.store_assignment?.store?.location_kind==='OFFICE'?'Kantor':'Crew Store'),location:location||'Lokasi belum tersedia',date:a.attendance_date,schedule,clockIn:a.check_in,clockOut:a.check_out,status,
+    lateMinutes:schedule&&a.check_in?a.late_minutes:null,overtimeMinutes:schedule&&a.check_out?a.overtime_minutes:null,overtimeStatus:a.overtime_status||'NONE',review:a.review_status||'NOT_REQUIRED',reviewNote:a.review_note||'',inNote:a.check_in_note||'',outNote:a.check_out_note||'',inPhoto:a.check_in?a.inPhoto||'':'',outPhoto:a.check_out?a.outPhoto||'':'',deadDevicePhoto:a.deadDevicePhoto||'',deadDeviceNote:a.dead_device_note||'',timeSource:'SERVER'};
+}
+export function fromGuest(g:ServerGuest):AttendanceRow {
+  // Older clients stored office attendance as CREW_STORE with the literal location "Kantor".
+  // Do not classify arbitrary store names or job positions containing "kantor" as offices.
+  const legacyOffice = g.crew_type === 'CREW_STORE' && /^kantor(?: \(tanpa pilihan lokasi\))?$/i.test((g.location_name || '').trim());
+  const isKantor = g.assignment_kind === 'OFFICE' || (g.assignment_kind !== 'EVENT' && legacyOffice);
+  return {inGPS:g.clock_type==='IN'?gpsPoint(g.latitude,g.longitude,g.accuracy):null,outGPS:g.clock_type==='OUT'?gpsPoint(g.latitude,g.longitude,g.accuracy):null,companyName:g.company_name||'',jobTitle:g.job_title||'',id:g.id,source:'guest',name:g.full_name,phone:g.phone,email:'',employeeCode:g.legacy_id||'',kind:isKantor ? 'Kantor' : g.crew_type==='CREW_STORE'?'Crew Store':'Crew Event',location:g.location_name,date:wibDate(g.occurred_at),schedule:null,clockIn:g.clock_type==='IN'?g.occurred_at:null,clockOut:g.clock_type==='OUT'?g.occurred_at:null,status:'Belum dapat dinilai',lateMinutes:null,overtimeMinutes:null,overtimeStatus:'NONE',review:g.review_status,reviewNote:g.review_note||'',inNote:g.clock_type==='IN'?g.note:'',outNote:g.clock_type==='OUT'?g.note:'',inPhoto:g.clock_type==='IN'?g.inPhoto||'':'',outPhoto:g.clock_type==='OUT'?g.outPhoto||'':'',timeSource:g.time_source};
+}
+export function fromLocal(g:GuestAttendanceRecord):AttendanceRow {
+  const time=legacyTime(g);
+  return {...fromGuest({latitude:g.latitude,longitude:g.longitude,accuracy:g.accuracy,company_name:g.companyName,job_title:g.jobTitle,id:g.id,legacy_id:g.id,full_name:g.nama,phone:g.hp,crew_type:g.jenis==='Crew Event'?'CREW_EVENT':'CREW_STORE',location_name:g.lokasi,position:g.posisi,clock_type:g.tipe==='Clock In'?'IN':'OUT',occurred_at:time||'',received_at:'',time_source:'LEGACY_DEVICE',note:g.catatan||'',review_status:'PENDING',review_note:'',inPhoto:g.tipe==='Clock In'?g.foto:'',outPhoto:g.tipe==='Clock Out'?g.foto:''}),kind:g.jenis,source:'local',legacy:g};
+}
+export interface Filters {search:string;date?:string;dateFrom?:string;dateTo?:string;kind:string;status:string;review:string;source:string;sort:string}
+export function filterAttendance(rows:AttendanceRow[],f:Filters) {
+  const search=f.search.trim().toLocaleLowerCase('id-ID');
+  const dateFrom=f.date||f.dateFrom;
+  const dateTo=f.date||f.dateTo;
+  const validDateRange=!dateFrom||!dateTo||dateFrom<=dateTo;
+  const filtered=rows.filter(a=>validDateRange&&(!dateFrom||a.date>=dateFrom)&&(!dateTo||a.date<=dateTo)&&(!f.kind||a.kind===f.kind)&&(!f.status||a.status===f.status)&&(!f.review||a.review===f.review)&&(!f.source||a.source===f.source)&&[a.name,a.phone,a.email,a.companyName,a.jobTitle,a.location].join(' ').toLocaleLowerCase('id-ID').includes(search));
+  return [...filtered].sort((a,b)=>f.sort==='name'?a.name.localeCompare(b.name,'id-ID'):f.sort==='oldest'?(a.clockIn||a.clockOut||'').localeCompare(b.clockIn||b.clockOut||''):f.sort==='status'?a.status.localeCompare(b.status,'id-ID'):(b.clockIn||b.clockOut||'').localeCompare(a.clockIn||a.clockOut||''));
+}
+export function recap(rows:AttendanceRow[]):(string|number|null)[][] {
+  return [['ID Absensi','Sumber','Tanggal Kerja (WIB)','Nama Crew','Perusahaan','Jabatan','HP','Email','Jenis','Lokasi Penugasan','Jadwal','Clock In (WIB)','Clock Out (WIB)','Status Kehadiran','Telat (menit)','Lembur (menit)','Persetujuan Lembur','Persetujuan Absensi','Catatan Clock In','Catatan Clock Out','Catatan Admin','Sumber Waktu','Latitude Masuk','Longitude Masuk','Akurasi Masuk (m)','Peta Masuk','Latitude Pulang','Longitude Pulang','Akurasi Pulang (m)','Peta Pulang'],...rows.map(a=>[
+    a.id,a.source==='local'?'Guest lokal belum sinkron':a.source==='guest'?'Guest server':'Crew terdaftar',a.date,a.name,a.companyName||'',a.jobTitle||'',a.phone,a.email,a.kind,a.location,scheduleLabel(a.schedule),a.clockIn?stamp(a.clockIn):'',a.clockOut?stamp(a.clockOut):'',a.status,a.lateMinutes,a.overtimeMinutes,a.overtimeMinutes===null?'Belum dapat dihitung':reviewLabel(a.overtimeStatus),a.source==='local'?'Belum disimpan ke server':reviewLabel(a.review),a.inNote,a.outNote,a.reviewNote,a.timeSource==='LEGACY_DEVICE'?'Perangkat (data lama)':'Server',a.inGPS?.latitude??null,a.inGPS?.longitude??null,a.inGPS?.accuracy??null,gpsLink(a.inGPS),a.outGPS?.latitude??null,a.outGPS?.longitude??null,a.outGPS?.accuracy??null,gpsLink(a.outGPS)
+  ])];
+}

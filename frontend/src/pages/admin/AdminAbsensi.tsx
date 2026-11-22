@@ -1,0 +1,176 @@
+import PermissionRequests from '../../components/attendance/PermissionRequests';
+import {useAuth} from '../../lib/AuthContext';
+import {t as translateUI} from '../../lib/i18n';
+import { removeGuestRecord } from '../guest/GuestCrewPortal';
+import { gpsLink } from './attendanceData';
+import ExportButtons from '../../components/ui/ExportButtons';
+import {useState,useEffect} from 'react';
+import Modal from '../../components/ui/Modal';
+import Avatar from '../../components/ui/Avatar';
+import {api} from '../../lib/apiClient';
+import {getGuestAttendances,markGuestSynced} from '../guest/GuestCrewPortal';
+import {button,primary,control,message} from './adminData';
+import {type AttendanceRow,type RegisteredAttendance,type ServerGuest,type Filters,fromRegistered,fromGuest,fromLocal,filterAttendance,recap,wibDate,stamp,scheduleLabel,reviewLabel} from './attendanceData';
+const emptyFilters:Filters={search:'',dateFrom:'',dateTo:'',kind:'',status:'',review:'',source:'',sort:'newest'};
+function ApprovalBadge({value}:{value:string}) {
+  const label=reviewLabel(value),tone=value==='APPROVED'?'bg-emerald-50 text-emerald-700 border-emerald-200':value==='REJECTED'?'bg-red-50 text-red-700 border-red-200':['PENDING','NOT_REQUIRED'].includes(value)?'bg-amber-50 text-amber-700 border-amber-200':'bg-slate-50 text-slate-600 border-slate-200';
+  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${tone}`}>{translateUI(label)}</span>;
+}
+export default function AdminAbsensi({eventOnly=false}:{eventOnly?:boolean}) {
+  const {auth}=useAuth();
+  const [deleting,setDeleting]=useState<AttendanceRow|null>(null);
+  const [deleteReason,setDeleteReason]=useState('');
+  const [rows,setRows]=useState<AttendanceRow[]>([]);
+  const [filters,setFilters]=useState<Filters>(emptyFilters);
+  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
+  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[modalError,setModalError]=useState('');
+  const [detail,setDetail]=useState<AttendanceRow|null>(null),[review,setReview]=useState<AttendanceRow|null>(null);
+  const [target,setTarget]=useState<'attendance'|'overtime'>('attendance');
+  const [note,setNote]=useState(''),[legacyDate,setLegacyDate]=useState('');
+  async function load() {
+    setLoading(true);setError('');
+    try {
+      const data=await api.get<{registered:RegisteredAttendance[];guest:ServerGuest[]}>('/admin-attendance');
+      const legacy=(eventOnly?[]:getGuestAttendances()).filter(g=>!g.serverId&&!data.guest.some(s=>s.id===g.serverId||(s.legacy_id===g.id&&s.phone===g.hp&&s.full_name===g.nama)));
+      setRows([...data.registered.map(fromRegistered),...data.guest.map(fromGuest),...legacy.map(fromLocal)].sort((a,b)=>(b.clockIn||b.clockOut||'').localeCompare(a.clockIn||a.clockOut||'')));
+    }catch(e){setError(message(e));}finally{setLoading(false);}
+  }
+  useEffect(()=>{void load();},[]);
+  async function getDetail(a:AttendanceRow) {
+    if(a.source==='local')return a;
+    const data=await api.get<RegisteredAttendance|ServerGuest>(`/admin-attendance/${a.source}/${a.id}`);
+    return a.source==='registered'?fromRegistered(data as RegisteredAttendance):fromGuest(data as ServerGuest);
+  }
+  async function open(a:AttendanceRow,isReview=false) {
+    setBusy(true);setModalError('');setNote('');setTarget(['PENDING','NOT_REQUIRED'].includes(a.review)?'attendance':'overtime');setLegacyDate('');
+    try{const full=await getDetail(a);if(isReview)setReview(full);else setDetail(full);}catch(e){setError(message(e));}finally{setBusy(false);}
+  }
+  async function removeAttendance() {
+    if(!deleting || !deleteReason.trim())return;
+    setBusy(true);setModalError('');
+    try {
+      if(deleting.source!=='local') await api.delete(`/admin-attendance/${deleting.source}/${deleting.id}`,{reason:deleteReason.trim()});
+      removeGuestRecord(deleting.id);
+      setDeleting(null);setDetail(null);setReview(null);
+      setNotice('Absensi dihapus. Rekap dan ekspor mengikuti data terbaru.');
+      await load();
+    }catch(e){setModalError(message(e));}finally{setBusy(false);}
+  }
+  async function importLegacy() {
+    if(!review?.legacy)return;setBusy(true);setModalError('');
+    try {
+      const g=review.legacy;const occurredAt=review.clockIn||review.clockOut||(legacyDate?new Date(legacyDate+':00+07:00').toISOString():'');
+      if(!occurredAt)throw new Error('Tanggal data lama belum terbaca. Isi tanggal dan jam sebenarnya (WIB).');
+      if(!/^data:image\/(jpeg|png|webp);base64,/.test(g.foto))throw new Error('Foto data lama tidak tersedia atau tidak didukung.');
+      const photo=await (await fetch(g.foto)).blob();const form=new FormData();
+      for(const [key,value]of Object.entries({companyName:g.companyName||'',jobTitle:g.jobTitle||'',fullName:g.nama,phone:g.hp,crewType:g.jenis==='Crew Event'?'CREW_EVENT':'CREW_STORE',locationName:g.lokasi,position:g.posisi||'',clockType:g.tipe==='Clock In'?'IN':'OUT',occurredAt,legacyId:g.id,note:g.catatan||'',latitude:g.latitude??'',longitude:g.longitude??'',accuracy:g.accuracy??'',address:g.address||''}))form.append(key,String(value));
+      form.append('photo',photo,'guest-legacy.jpg');
+      const saved=await api.postForm<{id:string}>('/admin-attendance/import-guest',form);
+      markGuestSynced(g,saved.id);
+      const full=fromGuest(await api.get<ServerGuest>(`/admin-attendance/guest/${saved.id}`));
+      setReview(full);setTarget('attendance');setNotice('Data guest lama tersimpan di server. Silakan tinjau.');await load();
+    }catch(e){setModalError(message(e));}finally{setBusy(false);}
+  }
+  async function resolve(decision:'APPROVED'|'REJECTED') {
+    if(!review||review.source==='local')return;setBusy(true);setModalError('');
+    try {
+      if(decision==='REJECTED'&&!note.trim())throw new Error('Isi alasan penolakan terlebih dahulu.');
+      await api.patch(`/admin-attendance/${review.source}/${review.id}/review`,{decision,target,note});
+      setReview(null);setNotice(`${target==='overtime'?'Lembur':'Pengajuan absensi'} ${decision==='APPROVED'?'disetujui':'ditolak'}. Keputusan tersimpan dan notifikasi dikirim ke akun crew.`);await load();
+    }catch(e){setModalError(message(e));}finally{setBusy(false);}
+  }
+  const filtered=filterAttendance(rows,filters);
+  const filter=(key:keyof Filters,value:string)=>setFilters(f=>({...f,[key]:value}));
+  const needsReview=(a:AttendanceRow)=>['PENDING','NOT_REQUIRED'].includes(a.review)||(a.overtimeStatus==='PENDING'&&['APPROVED','NOT_REQUIRED'].includes(a.review));
+  const metrics=[['Clock In tercatat',filtered.filter(a=>!!a.clockIn).length],['Tepat Waktu',filtered.filter(a=>a.status==='Tepat Waktu').length],['Telat',filtered.filter(a=>a.status==='Telat').length],['Tanpa Clock In',filtered.filter(a=>!a.clockIn).length],['Perlu Ditinjau',filtered.filter(needsReview).length]];
+  function actions(a:AttendanceRow){return <div className="flex flex-wrap items-center gap-3">{needsReview(a)?<button disabled={busy||!!error} className={primary+' whitespace-nowrap'} onClick={()=>void open(a,true)}>{a.source==='local'?translateUI("Simpan & Tinjau"):['PENDING','NOT_REQUIRED'].includes(a.review)?translateUI("Tinjau Absensi"):translateUI("Tinjau Lembur")}</button>:<span className="text-xs font-semibold text-emerald-700">{translateUI("Sudah ditinjau")}</span>}<button disabled={busy} className="text-blue-700 text-xs font-semibold whitespace-nowrap" onClick={()=>void open(a)}>{translateUI("Lihat Detail")}</button><button disabled={busy} className="text-red-700 text-xs font-semibold" onClick={()=>{setDeleting(a);setDeleteReason('');setModalError('')}}>{translateUI("Hapus")}</button></div>;}
+  function positions(a:AttendanceRow) {
+    return <div className="grid sm:grid-cols-2 gap-3">{(['in','out'] as const).map(side=>{
+      const point=side==='in'?a.inGPS:a.outGPS;
+      const mode=side==='in'?a.inLocationMode:a.outLocationMode;
+      const distance=side==='in'?a.inDistance:a.outDistance;
+      return <div key={side} className="rounded-xl border border-slate-200 p-3 text-xs text-slate-700">
+        <p className="font-semibold">GPS {side==='in'?'Clock In':'Clock Out'}</p>
+        {mode && <p className="mt-1 text-blue-700">{translateUI(mode==='ANYWHERE'?'Semua lokasi — GPS tetap dicatat':'Sesuai radius lokasi penugasan')}</p>}
+        {distance !== null && distance !== undefined && <p>{translateUI("Jarak dari lokasi penugasan:")} {Number(distance).toLocaleString('id-ID')} m</p>}
+        {point?<><p className="mt-1">{point.latitude}, {point.longitude}</p><p>{translateUI("Akurasi:") + " "}{point.accuracy===null?translateUI("Tidak tercatat"):`±${point.accuracy} m`}</p><a className="text-blue-700 underline" href={gpsLink(point)} target="_blank" rel="noopener noreferrer">{translateUI("Buka titik GPS")}</a></>:<p>{translateUI("Koordinat belum tercatat.")}</p>}
+      </div>;
+    })}</div>;
+  }
+  function photos(a:AttendanceRow) {
+    const hasBreak=a.source==='registered'&&(a.schedule?.break_start_time||a.breakStartedAt||a.breakEndedAt);
+    const hasDeadDevice=a.source==='registered'&&!!a.deadDevicePhoto;
+    return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{([
+      'in',
+      'out',
+      ...(hasBreak?['breakStart','breakEnd']:[]),
+      ...(hasDeadDevice?['deadDevice']:[])
+    ] as string[]).map(side=>{
+      const photo=side==='in'?a.inPhoto:side==='out'?a.outPhoto:side==='breakStart'?a.breakStartPhoto:side==='breakEnd'?a.breakEndPhoto:a.deadDevicePhoto;
+      const time=side==='in'?a.clockIn:side==='out'?a.clockOut:side==='breakStart'?a.breakStartedAt||null:side==='breakEnd'?a.breakEndedAt||null:null;
+      const comment=side==='in'?a.inNote:side==='out'?a.outNote:side==='deadDevice'?a.deadDeviceNote||'':'';
+      const label=side==='in'?'Clock In':side==='out'?'Clock Out':side==='breakStart'?'Mulai istirahat':side==='breakEnd'?'Selesai istirahat':'Matikan Device';
+      const point=side==='breakStart'?a.breakStartGPS:side==='breakEnd'?a.breakEndGPS:null;
+      return <section key={side} className="p-4 rounded-xl bg-slate-50 space-y-3">
+        <h3 className="font-semibold text-sm text-slate-900">{label}</h3>
+        {(side==='breakStart'||side==='breakEnd')&&a.schedule?.break_start_time&&a.schedule.break_end_time&&<p className="text-xs text-slate-600">Jadwal istirahat {a.schedule.break_start_time.slice(0,5)} – {a.schedule.break_end_time.slice(0,5)} WIB</p>}
+        {side==='deadDevice'&&<p className="text-xs text-amber-700 font-medium">{translateUI('Foto bukti perangkat sudah dimatikan sebelum clock out')}</p>}
+        {photo?<a href={photo} target="_blank" rel="noopener noreferrer" aria-label={'Buka Foto '+label}><img src={photo} alt={'Foto '+label} className="w-full rounded-xl object-contain max-h-80" onError={e=>{e.currentTarget.hidden=true;e.currentTarget.insertAdjacentText('afterend',translateUI('Foto gagal dimuat. Tutup dan buka ulang detail.'));}}/></a>:<p className="text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl p-5">{time?translateUI("Foto tidak tersedia untuk catatan ini."):'Belum ada foto '+label.toLowerCase()+'.'}</p>}
+        {time&&<p className="text-sm font-semibold text-slate-900">{translateUI(stamp(time))}</p>}
+        {point&&<a className="text-xs text-blue-700 underline" href={gpsLink(point)} target="_blank" rel="noopener noreferrer">Buka titik GPS istirahat</a>}
+        {comment&&<div className="text-sm text-slate-700 whitespace-pre-wrap break-words"><p className="font-semibold">{translateUI("Catatan") + " "}{side==='in'?translateUI('Clock In'):side==='out'?translateUI('Clock Out'):translateUI('Matikan Device')}</p><p>{comment}</p></div>}
+      </section>;
+    })}</div>;
+  }
+  function identity(a:AttendanceRow){
+    const employment=[a.companyName,a.jobTitle].filter(Boolean).join(' · ');
+    const location=a.location&&!/tanpa pilihan|lokasi belum/i.test(a.location)?a.location:'';
+    return <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl"><Avatar name={a.name}/><div className="min-w-0 space-y-1"><h3 className="font-semibold break-words">{a.name}</h3>{employment&&<p className="text-sm text-slate-600 break-words">{employment}</p>}<p className="text-sm text-slate-600">{a.kind}{a.source!=='registered'?' · Guest':''}</p>{location&&<p className="text-sm text-slate-600 break-words">{location}</p>}{a.phone&&<p className="text-xs text-slate-500">{a.phone}</p>}</div></div>;
+  }
+  function calculation(a:AttendanceRow){
+    return <div className="grid sm:grid-cols-3 gap-3">{[['Kehadiran',a.status,a.lateMinutes?`${a.lateMinutes} menit terlambat`:''],['Tinjauan admin',reviewLabel(a.review),a.review==='NOT_REQUIRED'?'Belum ditinjau manual':''],['Lembur',a.overtimeMinutes===null?'Belum clock-out':a.overtimeMinutes?`${a.overtimeMinutes} menit`:'Tidak lembur',a.overtimeMinutes?reviewLabel(a.overtimeStatus):'']].map(([label,value,sub])=><div key={label} className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">{label}</p><p className="font-semibold mt-1">{value}</p>{sub&&<p className="text-xs text-slate-600 mt-1">{sub}</p>}</div>)}</div>;
+  }
+
+  return <div className="p-4 sm:p-6 space-y-5">
+    <div className="flex flex-wrap justify-between gap-3 items-center"><div><h2 className="font-bold text-lg text-slate-900">{translateUI(eventOnly?"Absensi Event":"Rekap Absensi")}</h2><p className="text-sm text-slate-600">{translateUI(eventOnly?"Tinjau kehadiran crew dan guest pada penugasan event.":"Kehadiran, catatan crew, dan persetujuan lembur.")}</p></div><div className="flex flex-wrap gap-2"><button className={button} disabled={loading||busy} onClick={()=>void load()}>{translateUI("Muat ulang")}</button><ExportButtons filename="Rekap-Absensi" title={translateUI(eventOnly?"Absensi Event":"Rekap Absensi")} subtitle={translateUI("Sesuai filter aktif, waktu WIB")} headers={recap(filtered)[0] as string[]} rows={recap(filtered).slice(1)} /></div></div>
+    {auth?.role==='SUPER_ADMIN'&&<PermissionRequests admin onChanged={()=>void load()}/>}
+    {error&&<p role="alert" className="text-sm bg-red-50 text-red-700 rounded-xl p-4">{translateUI(error)}{" " + translateUI("Data belum lengkap. Muat ulang sebelum mengekspor.")}</p>}
+    {notice&&<p role="status" className="text-sm bg-emerald-50 text-emerald-700 rounded-xl p-4">{translateUI(notice)}</p>}
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{metrics.map(([label,n])=><div key={label} className="rounded-xl p-4 bg-blue-50 text-blue-700"><p className="text-2xl font-bold">{loading?'...':n}</p><p className="text-xs mt-1">{translateUI(label)}</p></div>)}</div>
+    <p className="text-xs text-slate-600">{translateUI("Ringkasan, Excel, dan PDF mengikuti seluruh filter di bawah.")}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-8 gap-3">
+      <label className="text-xs text-slate-600">{translateUI("Cari crew")}<input aria-label={translateUI("Cari crew")} value={filters.search} onChange={e=>filter('search',e.target.value)} className={control} placeholder={translateUI("Nama, HP, email, lokasi...")}/></label>
+      <label className="text-xs text-slate-600">{translateUI("Dari tanggal (WIB)")}<input aria-label={translateUI("Dari tanggal (WIB)")} type="date" max={filters.dateTo||undefined} value={filters.dateFrom} onChange={e=>filter('dateFrom',e.target.value)} className={control}/></label>
+      <label className="text-xs text-slate-600">{translateUI("Sampai tanggal (WIB)")}<input aria-label={translateUI("Sampai tanggal (WIB)")} type="date" min={filters.dateFrom||undefined} value={filters.dateTo} onChange={e=>filter('dateTo',e.target.value)} className={control}/></label>
+      <label className="text-xs text-slate-600">{translateUI("Jenis")}<select aria-label={translateUI("Jenis crew")} className={control} value={filters.kind} onChange={e=>filter('kind',e.target.value)}><option value="">{translateUI("Semua jenis")}</option>{[...new Set(rows.map(a=>a.kind))].sort().map(kind=><option key={kind}>{kind}</option>)}</select></label>
+      <label className="text-xs text-slate-600">{translateUI("Status kehadiran")}<select aria-label={translateUI("Status kehadiran")} className={control} value={filters.status} onChange={e=>filter('status',e.target.value)}><option value="">{translateUI("Semua status")}</option>{[...new Set(rows.map(a=>a.status))].sort().map(s=><option key={s} value={s}>{s}</option>)}</select></label>
+      <label className="text-xs text-slate-600">{translateUI("Persetujuan absensi")}<select aria-label={translateUI("Persetujuan absensi")} className={control} value={filters.review} onChange={e=>filter('review',e.target.value)}><option value="">{translateUI("Semua keputusan")}</option>{['PENDING','APPROVED','REJECTED','NOT_REQUIRED'].map(s=><option key={s} value={s}>{reviewLabel(s)}</option>)}</select></label>
+      <label className="text-xs text-slate-600">{translateUI("Sumber akun")}<select aria-label={translateUI("Sumber akun")} className={control} value={filters.source} onChange={e=>filter('source',e.target.value)}><option value="">{translateUI("Semua termasuk Guest")}</option><option value="registered">{translateUI("Crew terdaftar")}</option><option value="guest">{translateUI("Guest server")}</option>{!eventOnly&&<option value="local">{translateUI("Guest lokal")}</option>}</select></label>
+      <label className="text-xs text-slate-600">{translateUI("Urutkan")}<select aria-label={translateUI("Urutkan absensi")} className={control} value={filters.sort} onChange={e=>filter('sort',e.target.value)}><option value="newest">{translateUI("Terbaru")}</option><option value="oldest">{translateUI("Terlama")}</option><option value="name">{translateUI("Nama A–Z")}</option><option value="status">{translateUI("Status A–Z")}</option></select></label>
+    </div>
+    <div className="flex flex-wrap gap-3 items-center text-xs text-slate-600"><button className={button} onClick={()=>setFilters(f=>({...f,dateFrom:wibDate(),dateTo:wibDate()}))}>{translateUI("Hari ini")}</button><button className={button} onClick={()=>setFilters({...emptyFilters})}>{translateUI("Reset filter")}</button><span>{filters.dateFrom||filters.dateTo?`${filters.dateFrom||'…'} – ${filters.dateTo||'…'}`:translateUI("Semua tanggal")} • {filtered.length}{" " + translateUI("catatan")}</span></div>
+    <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-max text-sm"><thead className="text-xs bg-slate-50 text-slate-600"><tr>{['Nama & Kontak','Perusahaan','Jabatan','Jenis Penugasan','Lokasi','Tanggal','Jadwal','Clock In','Status','Telat','Clock Out','Lembur','Persetujuan Absensi','Persetujuan Lembur','Aksi'].map(h=><th key={h} className={`text-left p-3 whitespace-nowrap ${h==='Aksi'?'sticky right-0 bg-slate-50 z-10':''}`}>{translateUI(h)}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{filtered.map(a=><tr key={a.source+':'+a.id}>
+      <td className="p-3 min-w-44"><p className="font-semibold text-slate-900">{a.name}</p><p className="text-xs text-slate-500">{a.phone}</p>{a.source!=='registered'&&<p className="text-xs text-amber-700">{a.source==='local'?translateUI("Guest lokal belum sinkron"):'Guest'}</p>}</td>
+      <td className="p-3 text-slate-700">{a.companyName || translateUI("Belum diisi")}</td><td className="p-3 text-slate-700">{a.jobTitle || translateUI("Belum diisi")}</td>
+      <td className="p-3 whitespace-nowrap text-slate-700">{a.kind}</td><td className="p-3 min-w-40 text-slate-700">{a.location}</td><td className="p-3 text-slate-700">{a.date||'Tanggal belum terbaca'}</td><td className="p-3 min-w-36 text-slate-600">{scheduleLabel(a.schedule)}</td>
+      <td className="p-3 min-w-36 text-slate-700">{translateUI(stamp(a.clockIn))}</td><td className="p-3 text-slate-700">{translateUI(a.status)}</td><td className="p-3 text-slate-700">{a.lateMinutes===null?translateUI("Belum dapat dihitung"):a.lateMinutes?`${a.lateMinutes} ${translateUI('menit')}`:'—'}</td>
+      <td className="p-3 min-w-36 text-slate-700">{translateUI(stamp(a.clockOut))}</td><td className="p-3 min-w-28 text-slate-700">{a.overtimeMinutes===null?translateUI("Belum dihitung"):a.overtimeMinutes?`${a.overtimeMinutes} ${translateUI('menit')}`:'—'}</td>
+      <td className="p-3"><ApprovalBadge value={a.source==='local'?'PENDING':a.review}/></td>
+      <td className="p-3"><ApprovalBadge value={a.overtimeStatus}/></td>
+      <td className="p-3 sticky right-0 bg-white">{actions(a)}</td>
+    </tr>)}</tbody></table></div>{!filtered.length&&<p className="text-sm text-slate-500 p-8 text-center">{loading?'Memuat absensi...':translateUI("Tidak ada absensi yang sesuai filter.")}</p>}</div>
+    <div className="md:hidden space-y-3">{filtered.map(a=><article key={a.source+':'+a.id} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><h3 className="font-semibold break-words">{a.name}</h3><p className="text-xs text-slate-500">{a.kind}{a.source!=='registered'?' · Guest':''}</p></div><ApprovalBadge value={a.review}/></div><p className="text-xs text-slate-600">{a.date} · {a.status}</p>{a.location&&<p className="text-sm break-words">{a.location}</p>}<p className="text-xs text-slate-500">{scheduleLabel(a.schedule)}</p><div className="grid grid-cols-2 gap-3 text-xs"><div className="rounded-lg bg-slate-50 p-3"><p>Clock In</p><strong className="block mt-1">{stamp(a.clockIn)}</strong></div><div className="rounded-lg bg-slate-50 p-3"><p>Clock Out</p><strong className="block mt-1">{stamp(a.clockOut)}</strong></div></div><div className="border-t border-slate-100 pt-3">{actions(a)}</div></article>)}{!filtered.length&&<p className="text-sm text-slate-500">{loading?'Memuat absensi…':'Tidak ada absensi yang sesuai filter.'}</p>}</div>
+    <Modal open={!!deleting} onClose={()=>{if(!busy)setDeleting(null)}} title={translateUI("Hapus Absensi")}>
+      {deleting&&<div className="space-y-4"><p className="text-sm">{translateUI("Hapus absensi") + " "}{deleting.name}{" " + translateUI("pada") + " "}{deleting.date}{translateUI("? Catatan ini akan dikeluarkan dari rekap. Catatan lembur dan koreksi terkait ikut dihapus.")}</p><label className="block text-sm">{translateUI("Alasan penghapusan")}<textarea maxLength={1000} className={control+' mt-1'} value={deleteReason} onChange={e=>setDeleteReason(e.target.value)} /></label>{modalError&&<p role="alert" className="text-sm text-red-700">{modalError}</p>}<div className="flex justify-end gap-3"><button className={button} disabled={busy} onClick={()=>setDeleting(null)}>{translateUI("Batal")}</button><button className="rounded-xl bg-red-700 px-4 py-2 text-sm text-white disabled:opacity-50" disabled={busy||!deleteReason.trim()} onClick={()=>void removeAttendance()}>{busy?translateUI("Menghapus…"):translateUI("Hapus Absensi")}</button></div></div>}
+    </Modal>
+    <Modal open={!!detail} onClose={()=>setDetail(null)} title={translateUI("Detail Absensi")} size="lg">{detail&&<div className="space-y-4">{identity(detail)}<p className="text-sm text-slate-600">{translateUI("Jadwal:") + " "}{translateUI(scheduleLabel(detail.schedule))} • {detail.date||translateUI('Tanggal belum terbaca')}</p>{calculation(detail)}{positions(detail)}{photos(detail)}<p className="text-sm text-slate-700 whitespace-pre-wrap">{translateUI("Catatan admin:") + " "}{detail.reviewNote||'—'}</p></div>}</Modal>
+    <Modal open={!!review} onClose={()=>{if(!busy)setReview(null);}} title={translateUI("Tinjau Pengajuan Absensi")} size="lg">{review&&<div className="space-y-4">{identity(review)}{positions(review)}{photos(review)}
+      {modalError&&<p role="alert" className="bg-red-50 text-red-700 p-3 rounded-xl text-sm">{modalError}</p>}
+      {review.source==='local'?<><p className="text-sm text-slate-700">{translateUI("Data ini masih tersimpan di browser. Simpan foto dan catatannya ke server sebelum menyetujui atau menolak. Data asli di browser tetap dipertahankan.")}</p>{!review.clockIn&&!review.clockOut&&<label className="block text-sm text-slate-700">{translateUI("Tanggal dan jam sebenarnya (WIB)")}<input type="datetime-local" className={control} value={legacyDate} onChange={e=>setLegacyDate(e.target.value)}/></label>}<button disabled={busy} className={primary} onClick={()=>void importLegacy()}>{busy?translateUI("Menyimpan..."):translateUI("Simpan data lama ke server")}</button></>:
+      <><label className="block text-sm text-slate-700">{translateUI("Yang ditinjau")}<select aria-label={translateUI("Yang ditinjau")} disabled={busy} className={control} value={target} onChange={e=>setTarget(e.target.value as 'attendance'|'overtime')}>{['PENDING','NOT_REQUIRED'].includes(review.review)&&<option value="attendance">{translateUI("Pengajuan absensi")}</option>}{review.overtimeStatus==='PENDING'&&['APPROVED','NOT_REQUIRED'].includes(review.review)&&<option value="overtime">{translateUI("Lembur") + " "}{review.overtimeMinutes}{" " + translateUI("menit")}</option>}</select></label>
+      <p className="text-xs text-slate-600">{translateUI("Persetujuan tidak mengubah status tepat waktu/telat dan tidak otomatis menghitung pembayaran.") + " "}{review.source==='guest'?translateUI("Guest belum terhubung ke jadwal crew, sehingga keterlambatan dan lembur belum dapat dinilai."):''}</p>
+      <label className="block text-sm text-slate-700">{translateUI("Catatan admin (wajib jika menolak)")}<textarea aria-label={translateUI("Catatan admin")} rows={3} maxLength={2000} className={control} disabled={busy} value={note} onChange={e=>setNote(e.target.value)}/></label>
+      <div className="flex justify-end gap-3"><button disabled={busy} className={button.replace('text-slate-700','text-red-700')} onClick={()=>void resolve('REJECTED')}>{translateUI("Tolak Pengajuan")}</button><button disabled={busy} className={primary} onClick={()=>void resolve('APPROVED')}>{busy?translateUI("Menyimpan..."):translateUI("Setujui")}</button></div></>}
+    </div>}</Modal>
+  </div>;
+}

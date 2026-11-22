@@ -1,0 +1,839 @@
+import {accountRoles} from '../../lib/accountRoles';
+import {t as translateUI} from '../../lib/i18n';
+import { branchLabel } from '../../lib/locationLabel';
+import ExportButtons from '../../components/ui/ExportButtons';
+import { useAuth } from '../../lib/AuthContext';
+import CrewCsvImport from "./CrewCsvImport"
+import { useState, useEffect, type FormEvent } from "react"
+import { StatusBadge } from "../../components/ui/Badge"
+import Modal from "../../components/ui/Modal"
+import Avatar from "../../components/ui/Avatar"
+import { api } from "../../lib/apiClient"
+import DirectoryManager from "./DirectoryManager"
+import StoreScheduleManager from "./StoreScheduleManager"
+import BulkStoreScheduleManager from "./BulkStoreScheduleManager"
+import {
+  type Crew,
+  type Directory,
+  money,
+  crewKind,
+  eventCount,
+  sources,
+  control,
+  button,
+  primary,
+  panel,
+  message,
+} from "./adminData"
+const empty = {
+  fullName: "",
+  email: "",
+  password: "",
+  phoneNumber: "",
+  companyName: "",
+  jobTitle: "",
+  crewType: "CREW_EVENT",
+  assignmentKind: "EVENT",
+  attendanceLocationMode: "ASSIGNED",
+  baseSalary: "0",
+  status: "ACTIVE",
+  branchId: "",
+  assignTo: "",
+}
+export default function KelolaCrew() {
+  const { auth } = useAuth();
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [crew, setCrew] = useState<Crew[]>([])
+  const [directory, setDirectory] = useState<Directory>({
+    branches: [],
+    stores: [],
+    events: [],
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [notice, setNotice] = useState("")
+  const [search, setSearch] = useState("")
+  const [kind, setKind] = useState("")
+  const [status, setStatus] = useState("")
+  const [branch, setBranch] = useState("")
+  const [showImport, setShowImport] = useState(false)
+  const [form, setForm] = useState(empty)
+  const [editing, setEditing] = useState<Crew | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [showDirectory, setShowDirectory] = useState(false)
+  const [detail, setDetail] = useState<Crew | null>(null)
+  const [scheduleCrew, setScheduleCrew] = useState<Crew | null>(null)
+  const [showBulkSchedule, setShowBulkSchedule] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [action, setAction] = useState<"status" | "delete" | null>(
+    null,
+  )
+  const [visible, setVisible] = useState(false)
+  const [emailNotice, setEmailNotice] = useState('')
+  async function saveEmail() {
+    if(!editing)return
+    if(!window.confirm(`Ubah email login ${editing.user.email} menjadi ${form.email}? Pastikan alamat milik crew ini.`))return
+    setBusy(true);setFormError('');setEmailNotice('')
+    try {
+      const data=await api.patch<{email:string}>(`/crew/${editing.id}/email`,{email:form.email,expectedEmail:editing.user.email})
+      setEditing({...editing,user:{...editing.user,email:data.email}})
+      setForm(f=>({...f,email:data.email}));setEmailNotice('Email login sudah tersimpan. Perubahan profil lain tetap perlu Simpan Crew.')
+      await reload()
+    }catch(e){setFormError(message(e))}finally{setBusy(false)}
+  }
+  async function loadDirectory() {
+    setDirectory(await api.get<Directory>("/admin-directory"))
+  }
+  async function reload() {
+    setCrew(await api.get<Crew[]>("/crew"))
+  }
+  async function load() {
+    setLoading(true)
+    setError("")
+    try {
+      await Promise.all([reload(), loadDirectory()])
+    } catch (e) {
+      setError(message(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    void load()
+  }, [])
+  function openForm(c?: Crew) {
+    setEmailNotice('')
+    setEditing(c || null)
+    setFormError("")
+    setVisible(false)
+    setDetail(null)
+    const activeStore=c?.crew_type==="CREW_STORE"?(c.store_assignments||[]).find(a=>a.status==="ACTIVE")?.store?.id||"":""
+    setForm(
+      c
+        ? {
+            fullName: c.user.full_name,
+            email: c.user.email,
+            password: "",
+            phoneNumber: c.user.phone_number || "",
+            companyName: c.company_name || "",
+            jobTitle: c.job_title || "",
+            crewType: c.crew_type,
+            assignmentKind: c.assignment_kind || (c.crew_type === "CREW_EVENT" ? "EVENT" : c.store_assignments.find(a => a.status === "ACTIVE")?.store?.location_kind || "STORE"),
+            attendanceLocationMode: c.attendance_location_mode || "ASSIGNED",
+            baseSalary: String(Number(c.base_salary)),
+            status: c.status,
+            branchId: c.branch_id || "",
+            assignTo: activeStore,
+          }
+        : { ...empty },
+    )
+    setShowForm(true)
+  }
+  function change(key: keyof typeof empty, value: string) {
+    setForm((f) => ({ ...f, [key]: value }))
+  }
+  function changeCodeInputs(patch: Partial<typeof empty>) {
+    setForm(previous => ({...previous, ...patch}))
+  }
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setFormError("")
+    try {
+      const { email, password, baseSalary, ...rest } = form
+      if (editing && email !== editing.user.email)
+        throw new Error("Klik Perbarui email login terlebih dahulu, atau kembalikan email sebelum menyimpan profil.")
+      if (!/^\d*$/.test(baseSalary))
+        throw new Error("Gaji pokok harus angka rupiah bulat.")
+      const body = {
+        ...rest,
+        baseSalary: Number(baseSalary || 0),
+        branchId: form.branchId || null,
+        assignTo: form.crewType === "CREW_STORE" ? form.assignTo || null : null,
+        ...(!editing ? { email, password } : {}),
+      }
+      let passwordNotice = ""
+      if (editing) await api.patch(`/crew/${editing.id}`, body)
+      else { const result = await api.post<{passwordNotice?:string}>("/crew", body); passwordNotice = result.passwordNotice || "" }
+      setShowForm(false)
+      setForm({ ...empty })
+      setNotice(
+        editing
+          ? "Perubahan crew tersimpan."
+          : "Akun crew berhasil dibuat. Email dan password awal dapat dipakai untuk login. " + passwordNotice,
+      )
+      try {
+        await reload()
+      } catch (e) {
+        setError(
+          "Perubahan tersimpan, tetapi daftar belum termuat: " + message(e),
+        )
+      }
+    } catch (e) {
+      setFormError(message(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function openDetail(c: Crew) {
+    setBusy(true)
+    setError("")
+    setAction(null)
+    setFormError("")
+    try {
+      setDetail(await api.get<Crew>(`/crew/${c.id}`))
+    } catch (e) {
+      setError(message(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function confirmAction(e: FormEvent) {
+    e.preventDefault()
+    if (!detail || !action) return
+    setBusy(true)
+    setFormError("")
+    try {
+      if (action === "delete") await api.delete(`/crew/${detail.id}`, {confirm:true, email:confirmEmail})
+      else
+        await api.patch(`/crew/${detail.id}`, {
+          status: detail.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+        })
+      setNotice(
+        action === "delete"
+          ? "Crew dan akun login dihapus permanen. Email dapat digunakan kembali."
+          : "Status dan akses akun crew telah diperbarui.",
+      )
+      setDetail(null)
+      setAction(null)
+      try {
+        await reload()
+      } catch (e) {
+        setError(
+          "Perubahan tersimpan, tetapi daftar belum termuat: " + message(e),
+        )
+      }
+
+    } catch (e) {
+      setFormError(message(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const filtered = crew.filter(
+    (c) =>
+      (!kind || (c.user.user_roles?.[0]?.role.code || c.crew_type) === kind) &&
+      (!status || c.status === status) &&
+      (!branch || c.branch_id === branch) &&
+      [
+        c.user.full_name,
+        c.user.email,
+        c.company_name,
+        c.job_title,
+        c.division,
+        crewKind(c),
+        c.user.phone_number,
+        branchLabel(c.branch),
+        ...sources(c),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  )
+  const locations = form.crewType === "CREW_STORE"
+    ? directory.stores.filter((s) => s.branch_id === form.branchId && s.status === "ACTIVE" && (s.location_kind || "STORE") === form.assignmentKind).map((s) => ({ id: s.id, name: s.name, code:s.code }))
+    : directory.events.filter((e) => e.branch_id === form.branchId && ["SCHEDULED","ONGOING"].includes(e.status)).map((e) => ({ id:e.id, name:e.event_name, code:e.event_code }))
+  return (
+    <div className="p-4 sm:p-6 space-y-5">
+      {notice && (
+        <div
+          role="status"
+          className="flex justify-between gap-3 bg-emerald-50 text-emerald-700 rounded-xl p-3 text-sm"
+        >
+          {translateUI(notice)}
+          <button
+            onClick={() => setNotice("")}
+            aria-label={translateUI("Tutup pemberitahuan")}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {error && (
+        <div
+          role="alert"
+          className="bg-red-50 text-red-700 rounded-xl p-4 text-sm"
+        >
+          {translateUI(error)}
+          <button onClick={() => void load()} className={button + " ml-3"}>{" " + translateUI("Coba lagi") + " "}</button>
+        </div>
+      )}
+      <div className="space-y-2.5">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            aria-label={translateUI("Cari crew")}
+            placeholder={translateUI("Cari nama, perusahaan, jabatan, atau lokasi...")}
+            className={control + " flex-1"}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button
+            disabled={loading || busy || !!error}
+            className={`${primary} w-full sm:w-auto flex items-center justify-center gap-1.5 whitespace-nowrap`}
+            onClick={() => openForm()}
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>{translateUI("Tambah Crew")}</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2">
+          <button
+            disabled={loading || busy || !!error}
+            className={`${button} flex items-center justify-center text-center text-xs sm:text-sm py-2 px-3`}
+            onClick={() => setShowDirectory(true)}
+          >
+            {translateUI("Cabang, Store & Kantor")}
+          </button>
+          <button
+            disabled={loading || busy || !!error}
+            className={`${button} flex items-center justify-center text-center text-xs sm:text-sm py-2 px-3`}
+            onClick={() => setShowBulkSchedule(true)}
+          >
+            {translateUI("Jadwal Massal")}
+          </button>
+          <button
+            disabled={loading || busy || !!error}
+            className={`${button} col-span-2 sm:col-auto flex items-center justify-center text-center text-xs sm:text-sm py-2 px-3`}
+            onClick={() => setShowImport(true)}
+          >
+            {translateUI("Impor CSV")}
+          </button>
+          {!loading && !error && (
+            <div className="col-span-2 sm:col-auto w-full sm:w-auto">
+              <ExportButtons
+                filename="Daftar-Crew"
+                title={translateUI("Daftar Crew")}
+                subtitle={translateUI("Mengikuti pencarian dan filter Kelola Crew")}
+                headers={['Nama','HP','Email','Perusahaan','Jabatan','Divisi','Cabang','Penempatan','Role','Status']}
+                rows={filtered.map(c=>[c.user.full_name,c.user.phone_number||'',c.user.email,c.company_name||'Belum diisi',c.job_title||'',c.division||'',branchLabel(c.branch)||'Belum ditetapkan',sources(c).join(', ')||'Belum ditugaskan',crewKind(c),c.status==='ACTIVE'?'Aktif':'Non-Aktif'])}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+      {showImport && <CrewCsvImport onClose={()=>setShowImport(false)} onSaved={reload} existingEmails={crew.map(c=>c.user.email)} />}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select
+          aria-label={translateUI("Filter jenis")}
+          className={control}
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
+        >
+          <option value="">{translateUI("Semua role")}</option>
+          {Object.entries(accountRoles).map(([code,label])=><option key={code} value={code}>{label}</option>)}
+        </select>
+        <select
+          aria-label={translateUI("Filter cabang")}
+          className={control}
+          value={branch}
+          onChange={(e) => setBranch(e.target.value)}
+        >
+          <option value="">{translateUI("Semua cabang")}</option>
+          {directory.branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {branchLabel(b)}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={translateUI("Filter status")}
+          className={control}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">{translateUI("Semua status")}</option>
+          <option value="ACTIVE">{translateUI("Aktif")}</option>
+          <option value="INACTIVE">{translateUI("Non-Aktif")}</option>
+        </select>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          ["Total Personel", crew.length, "bg-blue-50 text-blue-800 border-blue-200/80"],
+          [
+            "Crew Event",
+            crew.filter((c) => (c.user.user_roles?.[0]?.role.code || c.crew_type) === "CREW_EVENT").length,
+            "bg-purple-50 text-purple-800 border-purple-200/80",
+          ],
+          [
+            "Crew Store",
+            crew.filter((c) => (c.user.user_roles?.[0]?.role.code || c.crew_type) === "CREW_STORE").length,
+            "bg-emerald-50 text-emerald-800 border-emerald-200/80",
+          ],
+          ["Non-Aktif", crew.filter((c) => c.status === "INACTIVE").length, "bg-slate-100 text-slate-700 border-slate-200"],
+        ].map(([label, n, colorClass]) => (
+          <div
+            key={label as string}
+            className={`rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between ${colorClass}`}
+          >
+            <span className="text-[11px] font-medium opacity-80 leading-tight">{translateUI(label as string)}</span>
+            <span className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{loading ? "..." : (n as number)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="divide-y divide-slate-100 sm:hidden">
+          {filtered.map(c => <article key={c.id} className="space-y-3 p-4" aria-label={c.user.full_name}>
+            <div className="flex items-start gap-3">
+              <Avatar name={c.user.full_name} src={c.avatarUrl} />
+              <div className="min-w-0 flex-1">
+                <p className="break-words font-semibold text-slate-900">{c.user.full_name}</p>
+                <p className="break-all text-xs text-slate-500">{c.user.email}</p>
+                <p className="text-xs text-slate-500">{c.user.phone_number || translateUI("HP belum diisi")}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-lg bg-blue-50 px-2 py-1 text-blue-700">{crewKind(c)}</span>
+              <StatusBadge status={c.status === "ACTIVE" ? "Aktif" : "Non-Aktif"} />
+            </div>
+            <dl className="space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
+              <div><dt className="text-xs text-slate-500">{translateUI("Perusahaan / Jabatan")}</dt><dd className="break-words">{[c.company_name, c.job_title, c.division].filter(Boolean).join(" · ") || "—"}</dd></div>
+              <div><dt className="text-xs text-slate-500">{translateUI("Cabang")}</dt><dd>{branchLabel(c.branch) || translateUI("Belum ditetapkan")}</dd></div>
+              <div><dt className="text-xs text-slate-500">{translateUI("Penempatan")}</dt><dd className="break-words">{sources(c).join(", ") || translateUI("Belum ditugaskan")}{c.assignment_kind === "OFFICE" && ` · ${translateUI("Kantor")}`}</dd></div>
+              <div><dt className="text-xs text-slate-500">{translateUI("Lokasi absensi")}</dt><dd className="font-medium text-blue-700">{translateUI(c.attendance_location_mode === "ANYWHERE" ? "Semua lokasi — GPS tetap dicatat" : "Sesuai radius lokasi penugasan")}</dd></div>
+            </dl>
+            <button type="button" disabled={busy} onClick={() => void openDetail(c)} className="min-h-11 w-full rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">{translateUI("Detail")}</button>
+          </article>)}
+        </div>
+        <div className="hidden overflow-x-auto sm:block">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+              <tr>
+                {[
+                  "Nama & Kontak", "Perusahaan", "Jabatan", "Cabang",
+                  "Penempatan", "Role", "Status", "Aksi",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className={
+                      "p-4 text-left whitespace-nowrap" +
+                      (h === "Aksi" ? " sticky right-0 bg-slate-50 z-10" : "")
+                    }
+                  >
+                    {translateUI(h)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((c) => (
+                <tr key={c.id} className="hover:bg-slate-50">
+                  <td className="p-4 min-w-56">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={c.user.full_name} src={c.avatarUrl} />
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {c.user.full_name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {c.user.phone_number || translateUI("HP belum diisi")}
+                        </p>
+                        <p className="text-xs text-slate-500 break-all">{c.user.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4 text-slate-700">{c.company_name || translateUI("Belum ditetapkan")}</td>
+                  <td className="p-4 text-slate-700">{[c.job_title,c.division].filter(Boolean).join(" · ") || "—"}</td>
+                  <td className="p-4 text-slate-700">{branchLabel(c.branch) || translateUI("Belum ditetapkan")}</td>
+                  <td className="p-4 min-w-40 text-slate-700">
+                    {sources(c).join(", ") || translateUI("Belum ditugaskan")}
+                    {c.assignment_kind === "OFFICE" && <p className="text-xs text-slate-500">{translateUI("Kantor")}</p>}
+                    {c.attendance_location_mode === "ANYWHERE" && <p className="mt-1 text-xs text-blue-700">{translateUI("Absensi semua lokasi")}</p>}
+                  </td>
+                  <td className="p-4 whitespace-nowrap text-blue-700">
+                    {crewKind(c)}
+                  </td>
+                  <td className="p-4 whitespace-nowrap">
+                    <StatusBadge
+                      status={c.status === "ACTIVE" ? "Aktif" : "Non-Aktif"}
+                    />
+                  </td>
+                  <td className="p-4 sticky right-0 bg-white z-10">
+                    <button
+                      disabled={busy}
+                      onClick={() => void openDetail(c)}
+                      className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                    >{" " + translateUI("Detail") + " "}</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!filtered.length && (
+          <p className="p-10 text-center text-sm text-slate-500">
+            {loading
+              ? "Memuat crew dari server..."
+              : error
+                ? translateUI("Data belum dapat dimuat.")
+                : translateUI("Tidak ada crew ditemukan.")}
+          </p>
+        )}
+        <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100">{" " + translateUI("Menampilkan") + " "}{filtered.length}{" " + translateUI("dari") + " "}{crew.length} crew.
+        </p>
+      </div>
+      <Modal
+        open={showForm}
+        onClose={() => {
+          if (!busy) {
+            setShowForm(false)
+            setForm({ ...empty })
+          }
+        }}
+        title={editing ? translateUI("Edit Crew") : translateUI("Tambah Crew Baru")}
+        size="lg"
+      >
+        <form onSubmit={submit} className="space-y-4">
+          {formError && (
+            <p
+              role="alert"
+              className="text-red-700 bg-red-50 p-3 rounded-xl text-sm"
+            >
+              {formError}
+            </p>
+          )}
+          <fieldset
+            disabled={busy}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+          >
+            <label className="text-sm text-slate-700">{" " + translateUI("Nama Lengkap") + " "}<input
+                required
+                minLength={2}
+                maxLength={150}
+                className={control}
+                value={form.fullName}
+                onChange={(e) => change("fullName", e.target.value)}
+              />
+            </label>
+            <div className="text-sm text-slate-700">
+              <label htmlFor="crew-login-email">Email</label>
+              <input
+                id="crew-login-email"
+                required
+                type="email"
+                maxLength={150}
+                className={control}
+                value={form.email}
+                onChange={(e) => change("email", e.target.value)}
+              />
+              {editing&&<button type="button" disabled={busy||form.email===editing.user.email} className={button+' mt-2'} onClick={()=>void saveEmail()}>{translateUI("Perbarui email login")}</button>}
+            </div>
+            {!editing && (
+              <div className="text-sm text-slate-700">
+                <label htmlFor="crew-initial-password">{translateUI("Password Awal")}</label>
+                <div className="flex gap-2">
+                  <input
+                    id="crew-initial-password"
+                    required
+                    autoComplete="new-password"
+                    type={visible ? "text" : "password"}
+                    minLength={8}
+                    maxLength={128}
+                    className={control}
+                    value={form.password}
+                    onChange={(e) => change("password", e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    aria-label={
+                      visible ? translateUI("Sembunyikan password") : translateUI("Tampilkan password")
+                    }
+                    className={button}
+                    onClick={() => setVisible(!visible)}
+                  >
+                    {visible ? translateUI("Sembunyikan") : translateUI("Lihat")}
+                  </button>
+                </div>
+              </div>
+            )}
+            <label className="text-sm text-slate-700">{" " + translateUI("Nomor HP") + " "}<input
+                type="tel"
+                maxLength={30}
+                className={control}
+                value={form.phoneNumber}
+                onChange={(e) => change("phoneNumber", e.target.value)}
+              />
+            </label>
+            <label className="text-sm text-slate-700">{translateUI("Perusahaan") + " "}<input list="crew-companies" maxLength={150} className={control} value={form.companyName} onChange={e=>change("companyName",e.target.value)} placeholder={translateUI("Pilih atau ketik perusahaan")} />
+              <datalist id="crew-companies">{[...new Set(["Fotosnaps", "Jawara Group", "Kripik Bujangan", ...crew.map(c=>c.company_name).filter(Boolean)])].map(name=><option key={name} value={name} />)}</datalist>
+            </label>
+            <label className="text-sm text-slate-700">{translateUI("Jabatan") + " "}<input maxLength={100} className={control} value={form.jobTitle} onChange={e=>change("jobTitle",e.target.value)} placeholder={translateUI("Contoh: Supervisor, Kasir, Fotografer")} />
+              <span className="text-xs text-slate-500">{translateUI("Jabatan tidak mengubah hak akses akun.")}</span>
+            </label>
+            <label className="text-sm text-slate-700">{" " + translateUI("Jenis Penugasan") + " "}<select
+                aria-label={translateUI("Jenis Crew")}
+                className={control}
+                value={form.assignmentKind}
+                onChange={(e) =>
+                  changeCodeInputs({ assignmentKind: e.target.value, crewType: e.target.value === "EVENT" ? "CREW_EVENT" : "CREW_STORE", assignTo: "" })
+                }
+              >
+                <option value="EVENT" disabled={!!editing && editing.crew_type !== "CREW_EVENT" && !!editing.user.user_roles?.some(r=>!['CREW_STORE','CREW_EVENT'].includes(r.role.code))}>{translateUI("Crew Event")}</option>
+                <option value="STORE" disabled={!!editing && editing.crew_type !== "CREW_STORE" && !!editing.user.user_roles?.some(r=>!['CREW_STORE','CREW_EVENT'].includes(r.role.code))}>{translateUI("Crew Store")}</option>
+                <option value="OFFICE" disabled={!!editing && editing.crew_type !== "CREW_STORE" && !!editing.user.user_roles?.some(r=>!['CREW_STORE','CREW_EVENT'].includes(r.role.code))}>{translateUI("Kantor")}</option>
+              </select>
+              <span className="text-xs text-slate-500">{translateUI("Kantor mengikuti jadwal kerja dan tidak mengubah role akun.")}</span>
+            </label>
+            <label className="text-sm text-slate-700">{translateUI("Lokasi absensi")}
+              <select aria-label={translateUI("Lokasi absensi")} className={control} value={form.attendanceLocationMode} disabled={auth?.role !== "SUPER_ADMIN"} onChange={e => change("attendanceLocationMode", e.target.value)}>
+                <option value="ASSIGNED">{translateUI("Sesuai radius lokasi penugasan")}</option>
+                <option value="ANYWHERE">{translateUI("Semua lokasi — GPS tetap dicatat")}</option>
+              </select>
+              <span className="mt-1 block text-xs text-slate-500">{translateUI("Semua lokasi mengizinkan clock in dan clock out dari mana saja. Jadwal, GPS, foto, dan tinjauan admin tetap berlaku. Hanya Super Admin yang dapat mengaturnya.")}</span>
+            </label>
+            <label className="text-sm text-slate-700">{" " + translateUI("Gaji Pokok (Rp)") + " "}<input
+                type="text"
+                inputMode="numeric"
+                maxLength={10}
+                className={control}
+                value={form.baseSalary}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value))
+                    change(
+                      "baseSalary",
+                      e.target.value.replace(/^0+(?=\d)/, ""),
+                    )
+                }}
+                onBlur={() => {
+                  if (!form.baseSalary) change("baseSalary", "0")
+                }}
+              />
+            </label>
+            <label className="text-sm text-slate-700">{" " + translateUI("Status Akun") + " "}<select
+                aria-label={translateUI("Status Akun")}
+                className={control}
+                value={form.status}
+                onChange={(e) => change("status", e.target.value)}
+              >
+                <option value="ACTIVE">{translateUI("Aktif")}</option>
+                <option value="INACTIVE">{translateUI("Non-Aktif")}</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-700">{" " + translateUI("Kantor Cabang") + " "}<select
+                aria-label={translateUI("Kantor Cabang")}
+                className={control}
+                value={form.branchId}
+                onChange={(e) =>
+                  changeCodeInputs({ branchId: e.target.value, assignTo: "" })
+                }
+              >
+                <option value="">{translateUI("Belum ditetapkan")}</option>
+                {directory.branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {branchLabel(b)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {form.crewType === "CREW_STORE" ? <label className="text-sm text-slate-700">{translateUI("Store / Kantor Penugasan") + " "}<select aria-label={translateUI("Store / Kantor Penugasan")} disabled={!form.branchId} className={control} value={form.assignTo} onChange={e=>change("assignTo",e.target.value)}>
+                <option value="">{translateUI("Belum ditugaskan")}</option>
+                {locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </label> : <p className="text-sm text-slate-500">{translateUI("Penugasan event diatur melalui Kelola Event setelah akun dibuat.")}</p>}
+          </fieldset>
+          {editing && (
+            <p className="text-xs text-slate-500">{" " + translateUI("Setelah mengubah email, klik Perbarui email login. Mengganti jenis crew mengakhiri penugasan aktif lama. Store baru menggantikan store aktif. Penugasan Crew Event dan posisi hanya diatur melalui Kelola Event. Jadwal absensi tidak dibuat otomatis.") + " "}</p>
+          )}
+          {emailNotice&&<p role="status" className="text-sm text-emerald-700">{emailNotice}</p>}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              className={button}
+              onClick={() => {
+                setShowForm(false)
+                setForm({ ...empty })
+              }}
+            >{" " + translateUI("Batal") + " "}</button>
+            <button disabled={busy} type="submit" className={primary}>
+              {busy ? translateUI("Menyimpan...") : translateUI("Simpan Crew")}
+            </button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        open={!!detail}
+        onClose={() => {
+          if (!busy) {
+            setDetail(null)
+            setAction(null)
+          }
+        }}
+        title={"Detail Crew" + (detail ? " • " + detail.user.full_name : "")}
+      >
+        {detail && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-4">
+              <Avatar
+                name={detail.user.full_name}
+                src={detail.avatarUrl}
+                large
+              />
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-slate-900">
+                  {detail.user.full_name}
+                </h3>
+                <p className="text-sm text-slate-500 break-all">
+                  {detail.user.email}
+                </p>
+                <p className="text-xs text-slate-500">{detail.company_name || translateUI("Perusahaan belum ditetapkan")}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ["Role", crewKind(detail)],
+                ["Jenis Penugasan", translateUI(detail.assignment_kind === "OFFICE" ? "Kantor" : detail.crew_type === "CREW_EVENT" ? "Crew Event" : "Crew Store")],
+                ["Lokasi absensi", translateUI(detail.attendance_location_mode === "ANYWHERE" ? "Semua lokasi — GPS tetap dicatat" : "Sesuai radius lokasi penugasan")],
+                ["Divisi", detail.division || "—"],
+                ["Status", detail.status === "ACTIVE" ? translateUI("Aktif") : translateUI("Non-Aktif")],
+                ["Nomor HP", detail.user.phone_number || translateUI("HP belum diisi")],
+                ["Perusahaan", detail.company_name || translateUI("Belum ditetapkan")],
+                ["Jabatan", detail.job_title || translateUI("Belum ditetapkan")],
+                ["Cabang", branchLabel(detail.branch) || translateUI("Belum ditetapkan")],
+                ["Gaji Pokok", money(detail.base_salary)],
+                ["Jumlah Event", eventCount(detail)],
+              ].map(([label, value]) => (
+                <div className="bg-slate-50 p-3 rounded-xl" key={label}>
+                  <p className="text-xs text-slate-500 mb-1">{translateUI(label)}</p>
+                  <p className="font-semibold text-sm text-slate-900 break-words">
+                    {value}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">{" " + translateUI("Store / Event Aktif") + " "}</h4>
+              <p className="text-sm text-slate-600 mt-1">
+                {sources(detail).join(", ") || translateUI("Belum ditugaskan")}
+              </p>
+            </div>
+            <details className="text-sm text-slate-600">
+              <summary className="cursor-pointer">{translateUI("Riwayat penugasan")}</summary>
+              <ul className="mt-2 space-y-2">
+                {(detail.store_assignments || []).map((a) => (
+                  <li key={a.id}>
+                    {a.store?.name || "Store"} • {a.status} • {a.start_date}
+                  </li>
+                ))}
+                {(detail.event_assignments || []).map((a) => (
+                  <li key={a.id}>
+                    {a.event?.event_name || "Event"} • {a.event?.event_date} •{" "}
+                    {a.position || translateUI("Posisi belum diisi")} • {a.status}
+                  </li>
+                ))}
+              </ul>
+              {!(
+                detail.store_assignments?.length ||
+                detail.event_assignments?.length
+              ) && <p>{translateUI("Belum ada riwayat.")}</p>}
+            </details>
+            {!action ? (
+              <div className="flex flex-wrap gap-2 justify-end">
+                {detail.crew_type === "CREW_STORE" && (
+                  <button
+                    disabled={busy}
+                    className={primary}
+                    onClick={() => { setScheduleCrew(detail); setDetail(null) }}
+                  >{" " + translateUI("Atur Jadwal Kerja") + " "}</button>
+                )}
+                <button
+                  disabled={busy}
+                  className={button}
+                  onClick={() => openForm(detail)}
+                >
+                  Edit
+                </button>
+                <button
+                  className={button.replace("text-slate-700", "text-amber-700")}
+                  onClick={() => {
+                    setAction("status")
+                    setFormError("")
+                  }}
+                >
+                  {detail.status === "ACTIVE" ? translateUI("Nonaktifkan") : translateUI("Aktifkan")}
+                </button>
+                {auth?.role === 'SUPER_ADMIN' && <button
+                  className={button.replace("text-slate-700", "text-red-700")}
+                  onClick={() => {
+                    setConfirmEmail('')
+                    setAction("delete")
+                    setFormError("")
+                  }}
+                >{" " + translateUI("Hapus permanen") + " "}</button>}
+              </div>
+            ) : (
+              <form onSubmit={confirmAction} className={panel + " space-y-3"}>
+                <p className="text-sm text-slate-700">
+                  {action === "delete"
+                    ? translateUI("Akun login, profil crew, penugasan, jadwal, absensi, izin, koreksi dan lembur terkait akan dihapus permanen. Event dan store tetap tersedia. Gunakan Nonaktifkan bila riwayat perlu dipertahankan.")
+                    : `Konfirmasi ${
+                          detail.status === "ACTIVE"
+                            ? "menonaktifkan akses login"
+                            : "mengaktifkan kembali akun"
+                        } ${detail.user.full_name}?`}
+                </p>
+                {action === "delete" && <label className="block text-sm">{translateUI('Ketik email akun untuk konfirmasi')}<input required type="email" className={control} value={confirmEmail} onChange={e=>setConfirmEmail(e.target.value)} /></label>}
+
+                {formError && (
+                  <p role="alert" className="text-sm text-red-700">
+                    {formError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={button}
+                    onClick={() => {
+                      setAction(null)
+                    }}
+                  >{" " + translateUI("Batal") + " "}</button>
+                  <button disabled={busy || (action === "delete" && confirmEmail.trim().toLowerCase() !== detail.user.email.toLowerCase())} className={primary} type="submit">
+                    {busy ? translateUI("Menyimpan...") : translateUI("Konfirmasi")}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+      </Modal>
+      <Modal
+        open={!!scheduleCrew}
+        onClose={() => setScheduleCrew(null)}
+        title={"Jadwal Kerja" + (scheduleCrew ? " • " + scheduleCrew.user.full_name : "")}
+        size="lg"
+      >
+        {scheduleCrew && <StoreScheduleManager crewId={scheduleCrew.id} crewName={scheduleCrew.user.full_name} />}
+      </Modal>
+      <Modal
+        open={showDirectory}
+        onClose={() => setShowDirectory(false)}
+        title={translateUI("Kelola Cabang, Store & Kantor")}
+        size="lg"
+      >
+        <DirectoryManager data={directory} onSaved={loadDirectory} />
+      </Modal>
+      <Modal
+        open={showBulkSchedule}
+        onClose={() => setShowBulkSchedule(false)}
+        title={translateUI("Jadwal Massal Crew Store")}
+        size="lg"
+      >
+        <BulkStoreScheduleManager stores={directory.stores} crew={crew} />
+      </Modal>
+    </div>
+  )
+}

@@ -1,0 +1,3 @@
+export interface PayrollAttendance {id:string;crew_id:string;attendance_date:string;check_in:string|null;check_out:string|null;status:string;review_status:string;overtime_status:string;overtime_minutes:number;late_minutes:number;store_schedule_id?:string;event_schedule_id?:string}
+export interface PayrollContext {schedules:Array<{crew_id:string;schedule_date:string}>;permissions:Array<{crew_id:string;start_date:string;end_date:string;type:string;status:string}>}
+export function monthKeys(end:string,count=6){const [y,m]=end.split('-').map(Number);return Array.from({length:count},(_,i)=>new Date(Date.UTC(y,m-count+i,1)).toISOString().slice(0,7));}
